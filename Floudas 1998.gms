@@ -16,6 +16,7 @@ Sets
   j 'units'/j1,j2,j3/
   n 'event points within time horizon' /n0, n1, n2, n3, n4/
   s 'states' /s1, s2, s3, s4/
+*the subset Ij and Ji will not be used as each unit, performs only one task
   Ij(i,j) 'tasks i which can be performed in unit j' /t1.j1, t2.j2, t3.j3/
   Is(s,i) 'tasks i which process state s and either can be produced.consumed' /s1.t1, s2.t1, s2.t2, s3.t2, s3.t3, s4.t3/
   Ji(j,i) 'units j suitable for performing task i' /j1.t1, j2.t2, j3.t3/;
@@ -98,7 +99,8 @@ Equations
 *first two lines have errors and I don't understand why
 allocation(j,n)..      sum(Ij(i,j), w(i,n)) =e= y(j,n);
 
-capacity(i,j,n)..       Vmin(i) * w(i,n) =l= bm(i,j,n) =l= Vmax(i);  
+*the actual constraint is as follows (Vmin(i) * w(i,n)) =l= (bm(i,j,n)) =l= (Vmax(i) * w(i,n)) but since Vmin is 0 for all it is not included
+capacity(i,j,n)..      (bm(i,j,n)) =l= (Vmax(i) * w(i,n));  
 
 storage(s,n)..         st(s,n) =l= STmax(s);
 
@@ -114,11 +116,11 @@ sequence1b(i,j,n)..    ts(i,j,n+1) =g= ts(i,j,n);
 
 sequence1c(i,j,n)..    tf(i,j,n+1) =g= tf(i,j,n);
 
-sequence2(i,j,n)..     ts(i,j,n+1) =g= tf(Ij(i,j),j,n) - h * (2 - w(Ij(i,j),n) - y(j,n));
+sequence2(i,j,n)..     ts(i,j,n+1) =g= tf(i,j,n) - h * (2 - w(i,n) - y(j,n));
 
-sequence3(i,j,n)..     ts(i,j,n+1) =g= tf(Ij(i,j),Ji(j,i),n) - h * (2 - w(Ij(i,j),n) - y(Ji(i,j),n));
+sequence3(i,j,n)..     ts(i,j,n+1) =g= tf(i,j,n) - h * (2 - w(i,n) - y(j,n));
 
-sequence4(i,j,n)..     ts(i,j,n+1) =g= sum(n,G,(tf(G,j,n) - ts(G,j,n)));
+sequence4(i,j,n)..     ts(i,j,n+1) =g= sum(n,sum(i,(tf(i,j,n) - ts(i,j,n))));
 
 timehorizon1(i,j,n)..  tf(i,j,n) =l= h;
 
