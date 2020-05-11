@@ -1,4 +1,4 @@
-$title STN Mathematical model of a simple batch plant (FLOUDAS, SEQ=1)
+
 
 $Ontext
 
@@ -59,12 +59,16 @@ Parameter
 /   s1  0
     s2  0
     s3  0
-    s4  1.0  /;
-  
-Scalar
-   h   'horizon time  (available time hrs)' /12. /
+    s4  10  /
+    
+    stin(s) 'Initial conditions for the intermediates'
+/   s1  100000
+    s2   0
+    s3   0
+    s4   0   /
+   h   'horizon time  (available time hrs)' /12/
 *market requirements hav not been specified, text advises us not to utilise demand constraints, made an assumption here
-   r 'market requirements for state s at end of time horizon' /4./;
+   r 'market requirements for state s at end of time horizon' /100/;
 
 Variables
    w(i,n) 'binary variable that assign the beginning of task i at event point n'
@@ -76,10 +80,10 @@ Variables
    tf(i,j,n) 'time that task i finishes in unit j while it starts at event point n'
    pp(s,i) 'proportion of states s produced from task i'
    pc(s,i) 'proportion of states s consumed from task i'
-   NP 'netprofit';
+   NetP 'netprofit';
    
 Binary variables w,y;
-Positive variable pp;
+Positive variable pp,bm,d,st,ts,tf;
 Negative variable pc;
 
 Equations
@@ -93,26 +97,14 @@ Equations
   storage2'represent the maximum available storage capacity for each state s at each event point n'
   storage3'represent the maximum available storage capacity for each state s at each event point n'
   storage4'represent the maximum available storage capacity for each state s at each event point n'
-  storage5'represent the maximum available storage capacity for each state s at each event point n'
-  storage6'represent the maximum available storage capacity for each state s at each event point n'
-  storage7'represent the maximum available storage capacity for each state s at each event point n'
-  storage8'represent the maximum available storage capacity for each state s at each event point n'
-  storage9'represent the maximum available storage capacity for each state s at each event point n'
-  storage10'represent the maximum available storage capacity for each state s at each event point n'
-  storage11'represent the maximum available storage capacity for each state s at each event point n'
-  storage12'represent the maximum available storage capacity for each state s at each event point n'
-  storage13'represent the maximum available storage capacity for each state s at each event point n'
-  storage14'represent the maximum available storage capacity for each state s at each event point n'
-  storage15'represent the maximum available storage capacity for each state s at each event point n'
-  storage16'represent the maximum available storage capacity for each state s at each event point n'
-  storage17'represent the maximum available storage capacity for each state s at each event point n'
-  storage18'represent the maximum available storage capacity for each state s at each event point n'
-  storage19'represent the maximum available storage capacity for each state s at each event point n'
-  storage20'represent the maximum available storage capacity for each state s at each event point n'
-  materialbalance1 'the proportion of state s consumed and produced from task i'
-  materialbalance2 'the proportion of state s consumed and produced from task i'
-  materialbalance3 'the proportion of state s consumed and produced from task i'
-  materialbalance4 'the proportion of state s consumed and produced from task i'
+  materialbalance1a 'the proportion of state s consumed and produced from task i'
+  materialbalance1b 'the proportion of state s consumed and produced from task i'
+  materialbalance2a 'the proportion of state s consumed and produced from task i'
+  materialbalance2b 'the proportion of state s consumed and produced from task i'
+  materialbalance3a 'the proportion of state s consumed and produced from task i'
+  materialbalance3b 'the proportion of state s consumed and produced from task i'
+  materialbalance4a 'the proportion of state s consumed and produced from task i'
+  materialbalance4b 'the proportion of state s consumed and produced from task i'
   duration1 'express the dependence of the time duration of task i at unit j at event point n on the amount of material being processed'
   duration2 'express the dependence of the time duration of task i at unit j at event point n on the amount of material being processed'
   duration3 'express the dependence of the time duration of task i at unit j at event point n on the amount of material being processed'
@@ -136,7 +128,7 @@ Equations
   sequence6c 
   sequence6d 
   sequence7a 'Completion of Previous Tasks'
-  sequence7b 
+  sequence7b
   sequence7c 
   sequence7d
   timehorizon1a 'represent the requirement of every task i to end within the time horizon H'
@@ -149,72 +141,60 @@ Equations
 
 *ALLOCATION CONSTRAINTS
 allocation1(n).. w('t1',n) =e= y('j1',n);
-allocation2(n).. w('t2',n) =e= y('j2',n);
-allocation3(n).. w('t3',n) =e= y('j3',n);
+allocation2(n).. w('t2',n) =e= y('j1',n);
+allocation3(n).. w('t3',n) =e= y('j1',n);
 
                   
 *CAPACITY CONSTRAINTS
 capacity1(n).. bm('t1','j1',n) =l= 100*w('t1',n);
-capacity2(n).. bm('t2','j2',n) =l= 100*w('t2',n);
-capacity3(n).. bm('t3','j3',n) =l= 100*w('t3',n);
+capacity2(n).. bm('t2','j2',n) =l= 75*w('t2',n);
+capacity3(n).. bm('t3','j3',n) =l= 50*w('t3',n);
 
 *STORAGE CONSTRAINTS
-*state 1 unlimited storage(set to 10 000)
-storage1.. st('s1','n0') =l= 10000;
-storage2.. st('s1','n1') =l= 10000;
-storage3.. st('s1','n2') =l= 10000;
-storage4.. st('s1','n3') =l= 10000;
-storage5.. st('s1','n4') =l= 10000;
+*state 1 unlimited storage(set to 100 000)
+storage1(n).. st('s1',n) =l= 100000;
 
 *state 2 limited stored (100)
-storage6.. st('s2','n0') =l= 100;
-storage7.. st('s2','n1') =l= 100;
-storage8.. st('s2','n2') =l= 100;
-storage9.. st('s2','n3') =l= 100;
-storage10.. st('s2','n4') =l= 100;
+storage2(n).. st('s2',n) =l= 100;
 
 *state 3 limited stored (100)
-storage11.. st('s3','n0') =l= 100;
-storage12.. st('s3','n1') =l= 100;
-storage13.. st('s3','n2') =l= 100;
-storage14.. st('s3','n3') =l= 100;
-storage15.. st('s3','n4') =l= 100;
+storage3(n).. st('s3',n) =l= 100;
 
 *state 4 unlimited storage(set to 10 000)
-storage16.. st('s4','n0') =l= 10000;
-storage17.. st('s4','n1') =l= 10000;
-storage18.. st('s4','n2') =l= 10000;
-storage19.. st('s4','n3') =l= 10000;
-storage20.. st('s4','n4') =l= 10000;
+storage4(n).. st('s4',n) =l= 100000;
 
 *MATERIAL BALANCES
-materialbalance1(n).. st('s1',n) =e= st('s1',n-1) - bm('t1','j1',n);
-materialbalance2(n).. st('s2',n) =e= st('s2',n-1) - bm('t2','j2',n) + bm('t1','j1',n);
-materialbalance3(n).. st('s3',n) =e= st('s3',n-1) - bm('t3','j3',n) + bm('t2','j2',n);
-materialbalance4(n).. st('s4',n) =e= st('s4',n-1) + bm('t3','j3',n) - d('s4',n);
+materialbalance1a.. st('s1','n0') =e= stin('s1') - bm('t1','j1','n0');
+materialbalance1b(n)$(ord(n)>1).. st('s1',n) =e= st('s1',n-1) - bm('t1','j1',n);
+materialbalance2a.. st('s2','n0') =e= stin('s2') - bm('t2','j2','n0');
+materialbalance2b(n)$(ord(n)>1).. st('s2',n) =e= st('s2',n-1) - bm('t2','j2',n) + bm('t1','j1',n-1);
+materialbalance3a.. st('s3','n0') =e= stin('s3') - bm('t3','j3','n0');
+materialbalance3b(n)$(ord(n)>1).. st('s3',n) =e= st('s3',n-1) - bm('t3','j3',n) + bm('t2','j2',n-1);
+materialbalance4a.. st('s4','n0') =e= stin('s4') - d('s4','n0');
+materialbalance4b(n)$(ord(n)>1).. st('s4',n) =e= st('s4',n-1) + bm('t3','j3',n-1) - d('s4',n);
                       
 *The product corresponds to state s4, for which the objective is to maximize the production over the time horizon
 *No market requirements are specified, and consequently no demand constraints are posed.
 
 *DURATION CONSTRAINTS
-duration1(n).. tf('t1','j1',n) =e= ts('t1','j1',n) + 3.0* w('t1',n) + 0.03*bm('t1','j1',n);
-duration2(n).. tf('t2','j2',n) =e= ts('t2','j2',n) + 2.0* w('t2',n) + 0.0266*bm('t2','j2',n);
-duration3(n).. tf('t3','j3',n) =e= ts('t3','j3',n) + 1.0* w('t3',n) + 0.02*bm('t3','j3',n);
+duration1(n).. tf('t1','j1',n) =e= ts('t1','j1',n) + (a('t1')*w('t1',n)) + (b('t1')*bm('t1','j1',n));
+duration2(n).. tf('t2','j2',n) =e= ts('t2','j2',n) + (a('t2')*w('t2',n)) + (b('t2')*bm('t2','j2',n));
+duration3(n).. tf('t3','j3',n) =e= ts('t3','j3',n) + (a('t3')*w('t3',n)) + (b('t3')*bm('t3','j3',n));
                     
 
 *SEQUENCE CONSTRAINTS
-sequence1a(n)..    ts('t1','j1',n+1) =g= tf('t1','j1',n) - h * (2 - w('t1',n) - y('j1',n));
-sequence1b(n)..    ts('t1','j1',n+1) =g= ts('t1','j1',n);
-sequence1c(n)..    tf('t1','j1',n+1) =g= tf('t1','j1',n);
+sequence1a(n)$(ord(n)<card(n)).. ts('t1','j1',n+1) =g= tf('t1','j1',n) - (h * (2 - w('t1',n) - y('j1',n)));
+sequence1b(n)$(ord(n)<card(n)).. ts('t1','j1',n+1) =g= ts('t1','j1',n);
+sequence1c(n)$(ord(n)<card(n)).. tf('t1','j1',n+1) =g= tf('t1','j1',n);
 
-sequence2a(n)..    ts('t2','j2',n+1) =g= tf('t2','j2',n) - h * (2 - w('t2',n) - y('j2',n));
-sequence2b(n)..    ts('t2','j2',n+1) =g= ts('t2','j2',n);
-sequence2c(n)..    tf('t2','j2',n+1) =g= tf('t2','j2',n);
+sequence2a(n)$(ord(n)<card(n)).. ts('t2','j2',n+1) =g= tf('t2','j2',n) - (h * (2 - w('t2',n) - y('j2',n)));
+sequence2b(n)$(ord(n)<card(n)).. ts('t2','j2',n+1) =g= ts('t2','j2',n);
+sequence2c(n)$(ord(n)<card(n)).. tf('t2','j2',n+1) =g= tf('t2','j2',n);
 
                 
-sequence3a(n)..    ts('t3','j3',n+1) =g= tf('t3','j3',n) - h * (2 - w('t3',n) - y('j3',n));
-sequence3b(n)..    ts('t3','j3',n+1) =g= ts('t3','j3',n);
-sequence3c(n)..    tf('t3','j3',n+1) =g= tf('t3','j3',n);
+sequence3a(n)$(ord(n)<card(n)).. ts('t3','j3',n+1) =g= tf('t3','j3',n) - (h * (2 - w('t3',n) - y('j3',n)));
+sequence3b(n)$(ord(n)<card(n)).. ts('t3','j3',n+1) =g= ts('t3','j3',n);
+sequence3c(n)$(ord(n)<card(n)).. tf('t3','j3',n+1) =g= tf('t3','j3',n);
                          
 *the constraint sequence2(i,j,n) 'Different Tasks in the Same Unit' will not apply as each unit has only one task it can perform.
 
@@ -224,7 +204,6 @@ sequence4a(n)..       ts('t2','j2',n+1) =g= tf('t1','j1',n) - h * (2 - w('t1',n)
 *reaction to separation
 sequence4b(n)..       ts('t3','j3',n+1) =g= tf('t2','j2',n) - h * (2 - w('t2',n) - y('j2',n));
                          
-
 sequence5a..     ts('t1','j1','n1') =g= (tf('t1','j1','n0') - ts('t1','j1','n0'));
 sequence5b..     ts('t1','j1','n2') =g= (tf('t1','j1','n0') - ts('t1','j1','n0')) + (tf('t1','j1','n1') - ts('t1','j1','n1'));
 sequence5c..     ts('t1','j1','n3') =g= (tf('t1','j1','n0') - ts('t1','j1','n0')) + (tf('t1','j1','n1') - ts('t1','j1','n1')) + (tf('t1','j1','n2') - ts('t1','j1','n2'));
@@ -248,11 +227,8 @@ timehorizon2a(n)..  ts('t1','j1',n) =l= h;
 timehorizon2b(n)..  ts('t2','j2',n) =l= h;
 timehorizon2c(n)..  ts('t3','j3',n) =l= h;
                        
-objectivefunction..    NP =e= d('s4','n0') + d('s4','n1') + d('s4','n2') + d('s4','n3') + d('s4','n2') + st('s4','n4') ;
+objectivefunction.. NetP =e= sum(n, ps('s4')*d('s4',n));
                     
 model floudasEXPLICIT98 / all /;
 
-solve floudasEXPLICIT98 using minlp maximizing NP;
-
-*OPTIMAL DESIGN
-display NP.m;
+solve floudasEXPLICIT98 using minlp maximizing NetP;
