@@ -1,0 +1,516 @@
+Sets
+  i 'tasks' /t1*t7/
+  j 'units'/j1*j6/
+  n 'event points within time horizon' /n0*n4/
+  s 'states' /s1*s13/
+  
+  Ij1(i) 'set of tasks performed by unit 1' /t1,t5/
+  Ij2(i) 'set of tasks performed by unit 2' /t2,t3,t7/
+  Ij3(i) 'set of tasks performed by unit 3' /t2,t3,t7/
+  Ij4(i) 'set of tasks performed by unit 4' /t4/
+  Ij5(i) 'set of tasks performed by unit 5' /t6/
+  Ij6(i) 'set of tasks performed by unit 5' /t6/
+  
+  
+  Jt1(j) 'units that perform task 1' /j1/
+  Jt2(j) 'units that perform task 2' /j2*j3/
+  Jt3(j) 'units that perform task 3' /j2*j3/
+  Jt4(j) 'units that perform task 4' /j4/
+  Jt5(j) 'units that perform task 5' /j1/
+  Jt6(j) 'units that perform task 6' /j5,j6/
+  Jt7(j) 'units that perform task 7' /j2*j3/
+  
+  alias(i,ip)
+  alias(j,jp)
+  alias(n,np)
+;
+
+*Please note
+*tasks: t1 - heating 1, t2 - reaction 1, t3 - reaction 2, t4 - separation, t5 - heating 2, t6 - mixing, t7 - reaction 3;
+*units: j1 - heater, j2 - reactor 1, j3 - reactor 2, j4 - separator, j5 - mixer 1, j6 - mixer 2;
+*states: s1 - feed 1, s2 - feed 2, s3 - Int1, s4 - Int2, s5 - Int3, s6 - Int4, s7 - Int 5, s8 - feed 3, s9 - Int 6, s10 - Int7, s11 - feed 4, s12 - product 1, s13 - product
+
+Parameters
+tau(i,j) 'mean processing time'
+/  t1. j1   1
+   t2. j2   2
+   t2. j3   2
+   t3. j2   1
+   t3. j3   1
+   t4. j4   3
+   t5. j1   1.5
+   t6. j5   2
+   t6. j6   2
+   t7. j2   2
+   t7. j3   2      /;
+   
+Parameter
+ taumax(i,j) '';
+ taumax(i,j) = (4/3)*tau(i,j);
+ 
+Parameter
+ taumin(i,j) '';
+ taumin(i,j) = (2/3)*tau(i,j);
+ 
+Parameter
+  a(i,j) 'constant term of processin time of task i at unit j';
+  a(i,j) = (2/3)*tau(i,j);
+
+Parameters
+
+b(i,j) 'fixed duration of task i'
+/  t1. j1  0.00667
+   t2. j2  0.01333
+   t2. j3  0.00889
+   t3. j2  0.00667
+   t3. j3  0.00445
+   t4. j4  0.00667
+   t5. j1  0.01000
+   t6. j5  0.00667
+   t6. j6  0.00667
+   t7. j2  0.01330
+   t7. j3  0.00889       /
+   
+vmin(i,j) 'Lower bound on the batch size of task i'
+/   t6. j5  20
+    t6. j6  20    /
+
+vmax(i,j) 'Upper bound on the batch size of task i'
+/  t1. j1   100
+   t2. j2   100
+   t2. j3   100
+   t3. j2   150
+   t3. j3   100
+   t4. j4   150
+   t5. j1   100
+   t6. j5   150
+   t6. j6   300
+   t7. j2   200
+   t7. j3   200       /
+ 
+pc(i,s) 'mass balance coefficient for the consumption of state s in task i'
+/  t1. s1  1
+   t2. s2  1
+   t3. s3  0.5
+   t3. s4  0.5
+   t4. s5  1
+   t5. s6  0.25
+   t5. s8  0.75
+   t6. s7  0.4
+   t7. s9  1
+   t6. s10 0.4
+   t6. s11 0.2      /
+   
+
+pp(i,s) 'mass balance coefficient for the production of state s in task i'
+/  t1. s3   1
+   t2. s4   1
+   t3. s5   1
+   t4. s4   0.1
+   t4. s6   0.4
+   t4. s7   0.7
+   t5. s9   1
+   t6. s12  1
+   t7. s13  0.4
+   t7. s10  0.6        /
+   
+STmax(s) 'available max storage capacity for state s'
+/   s1    +inf
+    s2    +inf
+    s3    100
+    s4    100
+    s5    300
+    s6    150
+    s7    150
+    s8    +inf
+    s9    150
+    s10   150
+    s11   +inf
+    s12   +inf
+    s13   +inf              /
+ 
+ps(s)  'price of state s'
+/   s12 5
+    s13 5   /
+
+stin(s) 'Initial conditions for states'
+/   s1  10000
+    s2  10000
+    s3   0
+    s4   0
+    s5   0
+    s6  50
+    s7  50
+    s8  10000
+    s9   0
+    s10  0
+    s11 10000
+    s12  0
+    s13  0           /
+
+  h   'horizon time  (available time hrs)' /8/
+*market requirements hav not been specified, text advises us not to utilise demand constraints, made an assumption here
+*r 'market requirements for state s at end of time horizon' /900/
+;
+   
+Variables
+w(i,n) 'binary variable that assign the beginning of task i at event point n'
+y(j,n) 'binary variable that assign the utilization of unit j at event point n'
+bm(i,j,n) 'amount of material undertaking task i in  unit j at event point n'
+d(s,n) 'amount of state s being delivered to the market at event point n'
+st(s,n) 'amount of state s at event point n'
+ts(i,j,n) 'time that task i starts in unit j at event point n'
+tf(i,j,n) 'time that task i finishes in unit j while it starts at event point n'
+NetP 'netprofit';
+
+Binary variables w,y;
+Positive variable bm,d,st,ts,tf;
+
+Equations
+allocation1 'express that at each unit j and at an event point n only one of the tasks that can be performed in this unit should take place'
+allocation2
+allocation3
+allocation4
+allocation5
+allocation6
+
+capacity1 'express the requirement for the of material in order for a unit j minimum amount Vminij to start operating task i and the maximum capacity of when performing task i'
+capacity2
+capacity3
+capacity4
+capacity5
+capacity6
+capacity7
+
+storage1
+
+materialbalance1a
+materialbalance1b
+materialbalance1c
+materialbalance1d
+materialbalance1e
+materialbalance1f
+materialbalance1g
+materialbalance1h
+materialbalance1i
+materialbalance1j
+materialbalance1k
+materialbalance1l
+materialbalance1m
+
+materialbalance2a
+materialbalance2b
+materialbalance2c
+materialbalance2d
+materialbalance2e
+materialbalance2f
+materialbalance2g
+materialbalance2h
+materialbalance2i
+materialbalance2j
+materialbalance2k
+materialbalance2l
+materialbalance2m
+
+duration1
+duration2
+duration3
+duration4
+duration5
+duration6
+duration7
+
+sequence1a
+sequence1b
+sequence1c
+sequence2a
+sequence2b
+sequence2c
+sequence3a
+sequence3b
+sequence3c
+sequence4a
+sequence4b
+sequence4c
+sequence5a
+sequence5b
+sequence5c
+sequence6a
+sequence6b
+sequence6c
+sequence7a
+sequence7b
+sequence7c
+
+sequence8a
+sequence8b
+sequence8c
+sequence8d
+sequence8e
+sequence8f
+
+sequencet1j1
+sequencet2j2
+sequencet2j3
+sequencet3j2
+sequencet3j3
+sequencet4j4
+sequencet5j1
+sequencet6j5
+sequencet6j6
+sequencet7j2
+sequencet7j3
+
+sequence9aj1
+sequence9bj2
+sequence9cj3
+sequence9dj4
+sequence9ej5
+sequence9fj6
+
+sequence10aj1
+sequence10bj2
+sequence10cj3
+sequence10dj4
+sequence10ej5
+sequence10fj6
+
+sequence11aj1
+sequence11bj2
+sequence11cj3
+sequence11dj4
+sequence11ej5
+sequence11fj6
+
+sequence12aj1
+sequence12bj2
+sequence12cj3
+sequence12dj4
+sequence12ej5
+sequence12fj6
+
+sequence13aj1
+sequence13bj2
+sequence13cj3
+sequence13dj4
+sequence13ej5
+sequence13fj6
+
+sequence14aj1
+sequence14bj2
+sequence14cj3
+sequence14dj4
+sequence14ej5
+sequence14fj6
+
+sequence15aj1
+sequence15bj2
+sequence15cj3
+sequence15dj4
+sequence15ej5
+sequence15fj6
+
+timehorizon1a
+timehorizon1b
+timehorizon1c
+timehorizon1d
+timehorizon1e
+timehorizon1f
+timehorizon1g
+
+timehorizon2a
+timehorizon2b
+timehorizon2c
+timehorizon2d
+timehorizon2e
+timehorizon2f
+timehorizon2g
+
+objectivefunction
+;
+
+allocation1(j,n).. sum(i$(Ij1(i)), w(i,n)) =e= y(j,n);
+allocation2(j,n).. sum(i$(Ij2(i)), w(i,n)) =e= y(j,n);
+allocation3(j,n).. sum(i$(Ij3(i)), w(i,n)) =e= y(j,n);
+allocation4(j,n).. sum(i$(Ij4(i)), w(i,n)) =e= y(j,n);
+allocation5(j,n).. sum(i$(Ij5(i)), w(i,n)) =e= y(j,n);
+allocation6(j,n).. sum(i$(Ij6(i)), w(i,n)) =e= y(j,n);
+
+*CAPACITY CONSTRAINTS
+capacity1(i,j,n)$(Jt1(j) and ord(i)=1).. bm(i,j,n) =l= vmax(i,j)*w(i,n);
+capacity2(i,j,n)$(Jt2(j) and ord(i)=2).. bm(i,j,n) =l= vmax(i,j)*w(i,n);
+capacity3(i,j,n)$(Jt3(j) and ord(i)=3).. bm(i,j,n) =l= vmax(i,j)*w(i,n);
+capacity4(i,j,n)$(Jt4(j) and ord(i)=4).. bm(i,j,n) =l= vmax(i,j)*w(i,n);
+capacity5(i,j,n)$(Jt5(j) and ord(i)=5).. bm(i,j,n) =l= vmax(i,j)*w(i,n);
+capacity6(i,j,n)$(Jt6(j) and ord(i)=6).. bm(i,j,n) =l= vmax(i,j)*w(i,n);
+capacity7(i,j,n)$(Jt7(j) and ord(i)=7).. bm(i,j,n) =l= vmax(i,j)*w(i,n);
+
+  
+*STORAGE CONSTRAINTS
+storage1(s,n).. st(s,n) =l= STmax(s);
+
+*MATERIAL BALANCES
+materialbalance1a.. st('s1','n0') =e= stin('s1') - sum(j$(Jt1(j)), pc('t1','s1')*bm('t1',j,'n0'));
+materialbalance1b.. st('s2','n0') =e= stin('s2') - sum(j$(Jt2(j)), pc('t2','s2')*bm('t2',j,'n0'));
+materialbalance1c.. st('s3','n0') =e= stin('s3') - sum(j$(Jt3(j)), pc('t3','s3')*bm('t3',j,'n0'));
+materialbalance1d.. st('s4','n0') =e= stin('s4') - sum(j$(Jt3(j)), pc('t3','s4')*bm('t3',j,'n0'));
+materialbalance1e.. st('s5','n0') =e= stin('s5') - sum(j$(Jt4(j)), pc('t4','s5')*bm('t4',j,'n0'));
+materialbalance1f.. st('s6','n0') =e= stin('s6') - sum(j$(Jt5(j)), pc('t5','s6')*bm('t5',j,'n0'));
+materialbalance1g.. st('s7','n0') =e= stin('s7') - sum(j$(Jt6(j)), pc('t6','s7')*bm('t6',j,'n0'));
+materialbalance1h.. st('s8','n0') =e= stin('s8') - sum(j$(Jt5(j)), pc('t5','s8')*bm('t5',j,'n0'));
+materialbalance1i.. st('s9','n0') =e= stin('s9') - sum(j$(Jt7(j)), pc('t7','s9')*bm('t7',j,'n0'));
+materialbalance1j.. st('s10','n0') =e= stin('s10') - sum(j$(Jt6(j)), pc('t6','s10')*bm('t6',j,'n0'));
+materialbalance1k.. st('s11','n0') =e= stin('s11') - sum(j$(Jt6(j)), pc('t6','s11')*bm('t6',j,'n0'));
+materialbalance1l.. st('s12','n0') =e= stin('s12') - d('s12','n0');
+materialbalance1m.. st('s13','n0') =e= stin('s13') - d('s13','n0');
+
+materialbalance2a(n)$(ord(n)>1).. st('s1',n) =e= st('s1',n-1) - sum(j$(Jt1(j)), pc('t1','s1')*bm('t1',j,n));
+materialbalance2b(n)$(ord(n)>1).. st('s2',n) =e= st('s2',n-1) - sum(j$(Jt2(j)), pc('t2','s2')*bm('t2',j,n));
+materialbalance2c(n)$(ord(n)>1).. st('s3',n) =e= st('s3',n-1) - sum(j$(Jt3(j)), pc('t3','s3')*bm('t3',j,n)) + sum(j$(Jt1(j)), pp('t1','s3')*bm('t1',j,n-1));
+materialbalance2d(n)$(ord(n)>1).. st('s4',n) =e= st('s4',n-1) - sum(j$(Jt3(j)), pc('t3','s4')*bm('t3',j,n)) + sum(j$(Jt2(j)), pp('t2','s4')*bm('t2',j,n-1)) + sum(j$(Jt4(j)), pp('t4','s4')*bm('t2',j,n-1));
+materialbalance2e(n)$(ord(n)>1).. st('s5',n) =e= st('s5',n-1) - sum(j$(Jt4(j)), pc('t4','s5')*bm('t4',j,n)) + sum(j$(Jt3(j)), pp('t3','s5')*bm('t3',j,n-1));
+materialbalance2f(n)$(ord(n)>1).. st('s6',n) =e= st('s6',n-1) - sum(j$(Jt5(j)), pc('t5','s6')*bm('t3',j,n)) + sum(j$(Jt4(j)), pp('t4','s6')*bm('t4',j,n-1));
+materialbalance2g(n)$(ord(n)>1).. st('s7',n) =e= st('s7',n-1) - sum(j$(Jt6(j)), pc('t6','s7')*bm('t3',j,n)) + sum(j$(Jt4(j)), pp('t4','s7')*bm('t4',j,n-1));
+materialbalance2h(n)$(ord(n)>1).. st('s8',n) =e= st('s8',n-1) - sum(j$(Jt5(j)), pc('t5','s8')*bm('t5',j,n));
+materialbalance2i(n)$(ord(n)>1).. st('s9',n) =e= st('s9',n-1) - sum(j$(Jt7(j)), pc('t7','s9')*bm('t7',j,n)) + sum(j$(Jt5(j)), pp('t5','s9')*bm('t5',j,n-1));
+materialbalance2j(n)$(ord(n)>1).. st('s10',n) =e= st('s10',n-1) - sum(j$(Jt6(j)), pc('t6','s10')*bm('t6',j,n)) + sum(j$(Jt7(j)), pp('t7','s10')*bm('t7',j,n-1));
+materialbalance2k(n)$(ord(n)>1).. st('s11',n) =e= st('s11',n-1) - sum(j$(Jt6(j)), pc('t6','s11')*bm('t6',j,n));
+materialbalance2l(n)$(ord(n)>1).. st('s12',n) =e= st('s12',n-1) + sum(j$(Jt6(j)), pp('t6','s12')*bm('t6',j,n-1)) - d('s12',n);
+materialbalance2m(n)$(ord(n)>1).. st('s13',n) =e= st('s13',n-1) + sum(j$(Jt7(j)), pp('t7','s13')*bm('t7',j,n-1)) - d('s13',n);
+
+*DURATION CONSTRAINTS
+duration1(i,j,n)$(Jt1(j) and ord(i)=1).. tf(i,j,n) =e= ts(i,j,n) + (a(i,j)*w(i,n)) + (b(i,j)*bm(i,j,n));
+duration2(i,j,n)$(Jt2(j) and ord(i)=2).. tf(i,j,n) =e= ts(i,j,n) + (a(i,j)*w(i,n)) + (b(i,j)*bm(i,j,n));
+duration3(i,j,n)$(Jt3(j) and ord(i)=3).. tf(i,j,n) =e= ts(i,j,n) + (a(i,j)*w(i,n)) + (b(i,j)*bm(i,j,n));
+duration4(i,j,n)$(Jt4(j) and ord(i)=4).. tf(i,j,n) =e= ts(i,j,n) + (a(i,j)*w(i,n)) + (b(i,j)*bm(i,j,n));
+duration5(i,j,n)$(Jt5(j) and ord(i)=5).. tf(i,j,n) =e= ts(i,j,n) + (a(i,j)*w(i,n)) + (b(i,j)*bm(i,j,n));
+duration6(i,j,n)$(Jt6(j) and ord(i)=6).. tf(i,j,n) =e= ts(i,j,n) + (a(i,j)*w(i,n)) + (b(i,j)*bm(i,j,n));
+duration7(i,j,n)$(Jt6(j) and ord(i)=7).. tf(i,j,n) =e= ts(i,j,n) + (a(i,j)*w(i,n)) + (b(i,j)*bm(i,j,n));
+
+*SEQUENCE CONSTRAINTS
+sequence1a(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= tf(i,j,n) - (h * (2 - w(i,n) - y(j,n)));
+sequence2a(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= tf(i,j,n) - (h * (2 - w(i,n) - y(j,n)));
+sequence3a(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= tf(i,j,n) - (h * (2 - w(i,n) - y(j,n)));
+sequence4a(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= tf(i,j,n) - (h * (2 - w(i,n) - y(j,n)));
+sequence5a(i,j,n)$(Jt5(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= tf(i,j,n) - (h * (2 - w(i,n) - y(j,n)));
+sequence6a(i,j,n)$(Jt6(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= tf(i,j,n) - (h * (2 - w(i,n) - y(j,n)));
+sequence7a(i,j,n)$(Jt7(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= tf(i,j,n) - (h * (2 - w(i,n) - y(j,n)));
+
+sequence1b(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= ts(i,j,n);
+sequence2b(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= ts(i,j,n);
+sequence3b(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= ts(i,j,n);
+sequence4b(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= ts(i,j,n);
+sequence5b(i,j,n)$(Jt5(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= ts(i,j,n);
+sequence6b(i,j,n)$(Jt6(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= ts(i,j,n);
+sequence7b(i,j,n)$(Jt7(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= ts(i,j,n);
+
+
+sequence1c(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. tf(i,j,n+1) =g= tf(i,j,n);
+sequence2c(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. tf(i,j,n+1) =g= tf(i,j,n);
+sequence3c(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. tf(i,j,n+1) =g= tf(i,j,n);
+sequence4c(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. tf(i,j,n+1) =g= tf(i,j,n);
+sequence5c(i,j,n)$(Jt5(j) and ord(n)<>card(n)).. tf(i,j,n+1) =g= tf(i,j,n);
+sequence6c(i,j,n)$(Jt6(j) and ord(n)<>card(n)).. tf(i,j,n+1) =g= tf(i,j,n);
+sequence7c(i,j,n)$(Jt7(j) and ord(n)<>card(n)).. tf(i,j,n+1) =g= tf(i,j,n);
+
+*different task in same units
+sequence8a(i,ip,j,n)$(Ij1(i) and Ij1(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,'j1',n+1) =g= tf(ip,'j1',n) - h*(2 - w(ip,n) - y('j1',n));
+sequence8b(i,ip,j,n)$(Ij2(i) and Ij2(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,'j2',n+1) =g= tf(ip,'j2',n) - h*(2 - w(ip,n) - y('j2',n));
+sequence8c(i,ip,j,n)$(Ij3(i) and Ij3(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,'j3',n+1) =g= tf(ip,'j3',n) - h*(2 - w(ip,n) - y('j3',n));
+sequence8d(i,ip,j,n)$(Ij4(i) and Ij4(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,'j4',n+1) =g= tf(ip,'j4',n) - h*(2 - w(ip,n) - y('j4',n));
+sequence8e(i,ip,j,n)$(Ij5(i) and Ij5(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,'j5',n+1) =g= tf(ip,'j5',n) - h*(2 - w(ip,n) - y('j5',n));
+sequence8f(i,ip,j,n)$(Ij6(i) and Ij6(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,'j6',n+1) =g= tf(ip,'j6',n) - h*(2 - w(ip,n) - y('j6',n));
+ 
+*different tasks in different units
+sequencet1j1(i,ip,j,jp,n)$(Jt2(j) and ord(i)=2 and ord(ip)=1 and ord(jp)=1 and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
+sequencet2j2(i,ip,j,jp,n)$(Jt3(j) and ord(i)=3 and ord(ip)=2 and ord(jp)=2 and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
+sequencet2j3(i,ip,j,jp,n)$(Jt3(j) and ord(i)=3 and ord(ip)=2 and ord(jp)=3 and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
+sequencet3j2(i,ip,j,jp,n)$(Jt4(j) and ord(i)=4 and ord(ip)=3 and ord(jp)=2 and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
+sequencet3j3(i,ip,j,jp,n)$(Jt4(j) and ord(i)=4 and ord(ip)=3 and ord(jp)=3 and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
+sequencet4j4(i,ip,j,jp,n)$(Jt5(j) and ord(i)=5 and ord(ip)=4 and ord(jp)=4 and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
+sequencet5j1(i,ip,j,jp,n)$(Jt6(j) and ord(i)=6 and ord(ip)=5 and ord(jp)=1 and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
+sequencet6j5(i,ip,j,jp,n)$(Jt7(j) and ord(i)=7 and ord(ip)=6 and ord(jp)=5 and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
+sequencet6j6(i,ip,j,jp,n)$(Jt7(j) and ord(i)=7 and ord(ip)=6 and ord(jp)=6 and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
+sequencet7j2(i,ip,j,jp,n)$(Jt6(j) and ord(i)=6 and ord(ip)=7 and ord(jp)=2 and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
+sequencet7j3(i,ip,j,jp,n)$(Jt6(j) and ord(i)=6 and ord(ip)=7 and ord(jp)=3 and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
+
+*completion of previous tasks
+sequence9aj1(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence9bj2(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence9cj3(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence9dj4(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij4(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence9ej5(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij5(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence9fj6(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij6(i)), tf(ip,j,np) - ts(ip,j,np)));
+
+
+sequence10aj1(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence10bj2(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence10cj3(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence10dj4(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij4(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence10ej5(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij5(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence10fj6(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij6(i)), tf(ip,j,np) - ts(ip,j,np)));
+
+sequence11aj1(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence11bj2(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence11cj3(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence11dj4(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij4(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence11ej5(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij5(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence11fj6(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij6(i)), tf(ip,j,np) - ts(ip,j,np)));
+
+sequence12aj1(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence12bj2(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence12cj3(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence12dj4(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij4(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence12ej5(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij5(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence12fj6(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij6(i)), tf(ip,j,np) - ts(ip,j,np)));
+
+
+sequence13aj1(i,j,n)$(Jt5(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence13bj2(i,j,n)$(Jt5(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence13cj3(i,j,n)$(Jt5(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence13dj4(i,j,n)$(Jt5(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij4(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence13ej5(i,j,n)$(Jt5(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij5(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence13fj6(i,j,n)$(Jt5(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij6(i)), tf(ip,j,np) - ts(ip,j,np)));
+
+sequence14aj1(i,j,n)$(Jt6(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence14bj2(i,j,n)$(Jt6(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence14cj3(i,j,n)$(Jt6(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence14dj4(i,j,n)$(Jt6(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij4(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence14ej5(i,j,n)$(Jt6(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij5(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence14fj6(i,j,n)$(Jt6(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij6(i)), tf(ip,j,np) - ts(ip,j,np)));
+
+
+sequence15aj1(i,j,n)$(Jt7(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence15bj2(i,j,n)$(Jt7(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence15cj3(i,j,n)$(Jt7(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence15dj4(i,j,n)$(Jt7(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij4(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence15ej5(i,j,n)$(Jt7(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij5(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence15fj6(i,j,n)$(Jt7(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij6(i)), tf(ip,j,np) - ts(ip,j,np)));
+
+*TIME HORIZON CONSTRAINTS
+*timehorizon1(i,j,n).. tf(i,j,n) =l= h;
+
+timehorizon1a(i,j,n)$Jt1(j).. tf(i,j,n) =l= h;
+timehorizon1b(i,j,n)$Jt2(j).. tf(i,j,n) =l= h;
+timehorizon1c(i,j,n)$Jt3(j).. tf(i,j,n) =l= h;
+timehorizon1d(i,j,n)$Jt4(j).. tf(i,j,n) =l= h;
+timehorizon1e(i,j,n)$Jt5(j).. tf(i,j,n) =l= h;
+timehorizon1f(i,j,n)$Jt6(j).. tf(i,j,n) =l= h;
+timehorizon1g(i,j,n)$Jt7(j).. tf(i,j,n) =l= h;
+
+*timehorizon2(i,j,n).. ts(i,j,n) =l= h;
+
+timehorizon2a(i,j,n)$Jt1(j).. ts(i,j,n) =l= h;
+timehorizon2b(i,j,n)$Jt2(j).. ts(i,j,n) =l= h;
+timehorizon2c(i,j,n)$Jt3(j).. ts(i,j,n) =l= h;
+timehorizon2d(i,j,n)$Jt4(j).. ts(i,j,n) =l= h;
+timehorizon2e(i,j,n)$Jt5(j).. ts(i,j,n) =l= h;
+timehorizon2f(i,j,n)$Jt6(j).. ts(i,j,n) =l= h;
+timehorizon2g(i,j,n)$Jt7(j).. ts(i,j,n) =l= h;
+
+objectivefunction.. NetP =e= sum(s, sum(n, ps(s)*d(s,n)));
+
+model sundaramoorthykarimicomplex / all /;
+options optcr = 0.0001;
+
+solve sundaramoorthykarimicomplex using minlp maximizing NetP;
