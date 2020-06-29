@@ -12,7 +12,7 @@ $Offtext
 Sets
   i 'tasks' /t1*t3/
   j 'units'/j1*j3/
-  n 'event points within time horizon' /n0*n4/
+  n 'event points within time horizon' /n0*n6/
   s 'states' /s1*s4/
   
   
@@ -47,12 +47,12 @@ Parameter
     s3   100
     s4   +inf    /
  
-  a(i) 'constant ter of processing time of task i at unit j'
+  a(i) 'constant term of processing time of task i at unit j'
 /   t1  3.0
     t2  2.0
     t3  1.0  /
   
-  b(i) 'varaible term of processing time of task i at unit j expressing time required by unit j to process one unit of materil performing task i'
+  b(i) 'variable term of processing time of task i at unit j expressing time required by unit j to process one unit of materil performing task i'
 /   t1  0.03
     t2  0.0266
     t3  0.02  /
@@ -70,7 +70,7 @@ Parameter
     s4   0   /
     
 
-   h   'horizon time  (available time hrs)' /10/
+   h   'horizon time  (available time hrs)' /12/
 *market requirements hav not been specified, text advises us not to utilise demand constraints, made an assumption here
    r 'market requirements for state s at end of time horizon' /100/;
 
@@ -204,17 +204,17 @@ sequence4c(i,ip,j,n)$(Ij3(i) and Ij3(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)
 sequence5t1j1(i,ip,j,jp,n)$(ord(n)<>card(n) and ord(i)<>ord(ip) and Jt2(j) and ord(i)=2 and ord(ip)=1 and ord(jp)=1).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
 sequence5t2j2(i,ip,j,jp,n)$(ord(n)<>card(n) and ord(i)<>ord(ip) and Jt3(j) and ord(i)=3 and ord(ip)=2 and ord(jp)=2).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
 
-sequence6aj1(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(i)), tf(ip,j,np) - ts(ip,j,np)));
-sequence6bj2(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(i)), tf(ip,j,np) - ts(ip,j,np)));
-sequence6cj3(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence6aj1(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(ip)), tf(ip,j,np) - ts(ip,j,np)));
+sequence6bj2(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(ip)), tf(ip,j,np) - ts(ip,j,np)));
+sequence6cj3(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(ip)), tf(ip,j,np) - ts(ip,j,np)));
 
-sequence7aj1(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(i)), tf(ip,j,np) - ts(ip,j,np)));
-sequence7bj2(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(i)), tf(ip,j,np) - ts(ip,j,np)));
-sequence7cj3(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence7aj1(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(ip)), tf(ip,j,np) - ts(ip,j,np)));
+sequence7bj2(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(ip)), tf(ip,j,np) - ts(ip,j,np)));
+sequence7cj3(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(ip)), tf(ip,j,np) - ts(ip,j,np)));
 
-sequence8aj1(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(i)), tf(ip,j,np) - ts(ip,j,np)));
-sequence8bj2(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(i)), tf(ip,j,np) - ts(ip,j,np)));
-sequence8cj3(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(i)), tf(ip,j,np) - ts(ip,j,np)));
+sequence8aj1(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(ip)), tf(ip,j,np) - ts(ip,j,np)));
+sequence8bj2(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(ip)), tf(ip,j,np) - ts(ip,j,np)));
+sequence8cj3(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(ip)), tf(ip,j,np) - ts(ip,j,np)));
 
 *TIME HORIZON CONSTRAINTS
 *timehorizon1(i,j,n).. tf(i,j,n) =l= h;
@@ -233,7 +233,7 @@ objectivefunction.. NetP =e= sum(s, sum(n, ps(s)*d(s,n)));
                     
 model floudasEX1 / all /;
 
-options optcr = 0.0001;
-options limrow = 100;
+options optcr = 0.00001;
+option mip = cplex;
 
-solve floudasEX1 using minlp maximizing NetP;
+solve floudasEX1 using mip maximizing NetP;
