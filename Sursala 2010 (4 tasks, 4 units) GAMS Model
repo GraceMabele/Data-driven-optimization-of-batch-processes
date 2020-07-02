@@ -16,7 +16,7 @@ $Offtext
 Sets
   i 'tasks' /t1*t4/
   j 'unit' /j1*j4/
-  n 'time point' /n0*n5/
+  n 'time point' /n0*n6/
   s 'storage/states' /s1*s6/
   
   Ij1(i) 'set of tasks that can be performed in unit 1' /t1/
@@ -204,15 +204,15 @@ timehorizon2d
 objectivefunction
 ;
 
-allocation1(j,n).. sum(i$(Ij1(i)), w(i,n)) =e= y('j1',n);
-allocation2(j,n).. sum(i$(Ij2(i)), w(i,n)) =e= y('j2',n);
-allocation3(j,n).. sum(i$(Ij3(i)), w(i,n)) =e= y('j3',n);
-allocation4(j,n).. sum(i$(Ij4(i)), w(i,n)) =e= y('j4',n);
+allocation1(j,n)$(ord(j)=1).. sum(i$(Ij1(i)), w(i,n)) =e= y('j1',n);
+allocation2(j,n)$(ord(j)=2).. sum(i$(Ij2(i)), w(i,n)) =e= y('j2',n);
+allocation3(j,n)$(ord(j)=3).. sum(i$(Ij3(i)), w(i,n)) =e= y('j3',n);
+allocation4(j,n)$(ord(j)=4).. sum(i$(Ij4(i)), w(i,n)) =e= y('j4',n);
 
-capacity1(i,j,n)$(Jt1(j))..bm(i,j,n) =l= vmax(i)*w(i,n);
-capacity2(i,j,n)$(Ij2(i))..bm(i,j,n) =l= vmax(i)*w(i,n);
-capacity3(i,j,n)$(Ij3(i))..bm(i,j,n) =l= vmax(i)*w(i,n);
-capacity4(i,j,n)$(Ij4(i))..bm(i,j,n) =l= vmax(i)*w(i,n);
+capacity1(i,j,n)$(Jt1(j) and ord(i)=1)..bm(i,j,n) =l= vmax(i)*w(i,n);
+capacity2(i,j,n)$(Jt2(j) and ord(i)=2)..bm(i,j,n) =l= vmax(i)*w(i,n);
+capacity3(i,j,n)$(Jt3(j) and ord(i)=3)..bm(i,j,n) =l= vmax(i)*w(i,n);
+capacity4(i,j,n)$(Jt4(j) and ord(i)=4)..bm(i,j,n) =l= vmax(i)*w(i,n);
 
 *STORAGE CONSTRAINTS
 storage1(s,n).. st(s,n) =l= STmax(s);
@@ -244,15 +244,15 @@ sequence2a(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts('t2',j,n+1) =g= tf('t2',j,n)
 sequence3a(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts('t3',j,n+1) =g= tf('t3',j,n) - (h * (2 - w('t3',n) - y(j,n)));
 sequence4a(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. ts('t4',j,n+1) =g= tf('t4',j,n) - (h * (2 - w('t4',n) - y(j,n)));
 
-sequence1b(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= ts(i,j,n);
-sequence2b(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= ts(i,j,n);
-sequence3b(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= ts(i,j,n);
-sequence4b(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= ts(i,j,n);
+sequence1b(i,j,n)$(Jt1(j) and ord(n)<>card(n) and ord(i)=1).. ts(i,j,n+1) =g= ts(i,j,n);
+sequence2b(i,j,n)$(Jt2(j) and ord(n)<>card(n) and ord(i)=2).. ts(i,j,n+1) =g= ts(i,j,n);
+sequence3b(i,j,n)$(Jt3(j) and ord(n)<>card(n) and ord(i)=3).. ts(i,j,n+1) =g= ts(i,j,n);
+sequence4b(i,j,n)$(Jt4(j) and ord(n)<>card(n) and ord(i)=4).. ts(i,j,n+1) =g= ts(i,j,n);
 
-sequence1c(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. tf(i,j,n+1) =g= tf(i,j,n);
-sequence2c(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. tf(i,j,n+1) =g= tf(i,j,n);
-sequence3c(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. tf(i,j,n+1) =g= tf(i,j,n);
-sequence4c(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. tf(i,j,n+1) =g= tf(i,j,n);
+sequence1c(i,j,n)$(Jt1(j) and ord(n)<>card(n) and ord(i)=1).. tf(i,j,n+1) =g= tf(i,j,n);
+sequence2c(i,j,n)$(Jt2(j) and ord(n)<>card(n) and ord(i)=2).. tf(i,j,n+1) =g= tf(i,j,n);
+sequence3c(i,j,n)$(Jt3(j) and ord(n)<>card(n) and ord(i)=3).. tf(i,j,n+1) =g= tf(i,j,n);
+sequence4c(i,j,n)$(Jt4(j) and ord(n)<>card(n) and ord(i)=4).. tf(i,j,n+1) =g= tf(i,j,n);
 
 *different task in same unit
 *sequence9(i,ip,j,n)$(ord(n)<card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,j,n) - h*(2 - w(ip,n) - y(j,n));
