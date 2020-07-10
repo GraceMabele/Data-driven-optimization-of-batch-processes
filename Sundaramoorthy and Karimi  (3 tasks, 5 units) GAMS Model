@@ -14,6 +14,7 @@ batch plants. Chemical Engineering Science 60 (2679–2702)
 $Offtext
 
 *Define the sets to be utilised in the MILP
+*Please task note that if a task can be performed in more than one unit then it is considered a different task for each unit it can b performed in.
 Sets
   i 'tasks' /t1*t5/
   j 'units'/j1*j5/
