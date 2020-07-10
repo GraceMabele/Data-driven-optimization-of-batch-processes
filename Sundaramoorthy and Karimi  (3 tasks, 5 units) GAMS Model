@@ -2,11 +2,14 @@ $Ontext
 
 This GAMS Model presents an application of the novel mathematical formulation
 for the short-term scheduling of batch plants. The proposed formulation by Ierapetritou and Floudas 
-is used on a literature example presented in the paper that involves 3 tasks and 5 units (2 mixers, 1 reactor and 2 purificators). The main process involves a series of 
+is used on a literature example by Sundaramoorthy and Karimi that involves 3 tasks and 5 units (2 mixers, 1 reactor and 2 purificators). The main process involves a series of 
 processing tasks i.e. a mixing, reaction and purification.
 
 Ierapetritou and Floudas (1998) Effective Continuous-Time Formulation for Short-Term Scheduling.
 1. Multipurpose Batch Processes. Independent Engineering Chemical Research 37 (4341-4359)
+
+Sundaramoorthy A, Karimi IA. (2005) A simpler better slot-based continuous-time formulation for short-term scheduling in multipurpose
+batch plants. Chemical Engineering Science 60 (2679–2702)
 
 $Offtext
 
