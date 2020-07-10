@@ -431,7 +431,7 @@ sequence6d4(i,ip,j,n)$(Ij4(i) and Ij4(ip) and ord(n)<>card(n) and ord(i)<>ord(ip
 *DIIFERENT TASK IN DIFFERENT UNIT
 *When different tasks i and i′ are performed in different units j and j′ but take place one after the other according to the production recipe.
 *These constraints specify the order in which then tasks in each unit should be performed 
-*i.e. mixing (in unit 1 and 2) then reaction then purification (in unit 4 and 5).
+*i.e. heating then reaction 1 then reaction 2 (reaction 2 can't be completed until both reaction 1 and heating are completed) then reaction 3 then separation.
 
 *sequence8(i,ip,j,jp,n)$(ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n))
 
