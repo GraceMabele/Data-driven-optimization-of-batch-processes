@@ -185,21 +185,6 @@ sequence7bj2
 sequence7cj3
 sequence7dj4
 
-sequence8aj1
-sequence8bj2
-sequence8cj3
-sequence8dj4
-
-sequence9aj1
-sequence9bj2
-sequence9cj3
-sequence9dj4
-
-sequence10aj1
-sequence10bj2
-sequence10cj3
-sequence10dj4
-
 timehorizon1a
 timehorizon1b
 timehorizon1c
@@ -298,27 +283,10 @@ sequence6t4j4(i,ip,j,jp,n)$(ord(n)<>card(n) and ord(i)<>ord(ip) and Jt3(j) and o
 
 *COMPLETION OF PREVIOUS TASK
 *A task i' (ip) peformed in unit j cannot start until task i in unit j is completed
-sequence7aj1(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(ip)), tf(ip,j,np) - ts(ip,j,np)));
-sequence7bj2(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(ip)), tf(ip,j,np) - ts(ip,j,np)));
-sequence7cj3(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(ip)), tf(ip,j,np) - ts(ip,j,np)));
-sequence7dj4(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij4(ip)), tf(ip,j,np) - ts(ip,j,np)));
-
-sequence8aj1(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(ip)), tf(ip,j,np) - ts(ip,j,np)));
-sequence8bj2(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(ip)), tf(ip,j,np) - ts(ip,j,np)));
-sequence8cj3(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(ip)), tf(ip,j,np) - ts(ip,j,np)));
-sequence8dj4(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij4(ip)), tf(ip,j,np) - ts(ip,j,np)));
-
-sequence9aj1(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(ip)), tf(ip,j,np) - ts(ip,j,np)));
-sequence9bj2(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(ip)), tf(ip,j,np) - ts(ip,j,np)));
-sequence9cj3(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(ip)), tf(ip,j,np) - ts(ip,j,np)));
-sequence9dj4(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij4(ip)), tf(ip,j,np) - ts(ip,j,np)));
-
-sequence10aj1(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(ip)), tf(ip,j,np) - ts(ip,j,np)));
-sequence10bj2(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(ip)), tf(ip,j,np) - ts(ip,j,np)));
-sequence10cj3(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(ip)), tf(ip,j,np) - ts(ip,j,np)));
-sequence10dj4(i,j,n)$(Jt4(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij4(ip)), tf(ip,j,np) - ts(ip,j,np)));
-
-
+sequence7aj1(i,j,n)$(Ij1(i) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(ip)), tf(ip,j,np) - ts(ip,j,np)));
+sequence7bj2(i,j,n)$(Ij2(i) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(ip)), tf(ip,j,np) - ts(ip,j,np)));
+sequence7cj3(i,j,n)$(Ij3(i) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(ip)), tf(ip,j,np) - ts(ip,j,np)));
+sequence7dj4(i,j,n)$(Ij4(i) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij4(ip)), tf(ip,j,np) - ts(ip,j,np)));
 
 *TIME HORIZON CONSTRAINTS
 *Specify that all tasks should task place within the time horizon
