@@ -395,6 +395,7 @@ duration7(i,j,n)$(Jt7(j) and ord(i)=7).. tf(i,j,n) =e= ts(i,j,n) + (a(i,j)*w(i,n
 duration8(i,j,n)$(Jt8(j) and ord(i)=8).. tf(i,j,n) =e= ts(i,j,n) + (a(i,j)*w(i,n)) + (b(i,j)*bm(i,j,n));
 
 *DEMAND CONSTRAINTS
+*we add these constraints when the objective finction is minimizing makespan
 demand(s).. sum(n$(ord(n)=card(n)), d(s,n)) =g= rm(s);
 
 *SEQUENCE CONSTRAINTS
