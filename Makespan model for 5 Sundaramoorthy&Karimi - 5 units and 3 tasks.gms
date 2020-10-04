@@ -1,20 +1,28 @@
 $Ontext
 
-This paper presents a novel mathematical formulation
-for the short-term scheduling of batch plants. The proposed formulation is based on a continuous
-time representation and results in a mixed integer linear programming (MILP) problem.
+This GAMS Model presents an application of the novel mathematical formulation
+for the short-term scheduling of batch plants. The proposed formulation by Ierapetritou and Floudas 
+is used on a literature example by Sundaramoorthy and Karimi that involves 3 tasks and 5 units (2 mixers, 1 reactor and 2 purificators). The main process involves a series of 
+processing tasks i.e. a mixing, reaction and purification.
 
 Ierapetritou and Floudas (1998) Effective Continuous-Time Formulation for Short-Term Scheduling.
 1. Multipurpose Batch Processes. Independent Engineering Chemical Research 37 (4341-4359)
 
+Sundaramoorthy A, Karimi IA. (2005) A simpler better slot-based continuous-time formulation for short-term scheduling in multipurpose
+batch plants. Chemical Engineering Science 60 (2679–2702)
 $Offtext
+
+*Define the sets to be utilised in the MILP
+*Please task note that if a task can be performed in more than one unit then it is considered a different task for each unit it can be performed in.
+
 
 Sets
   i 'tasks' /t1*t5/
   j 'units'/j1*j5/
   n 'event points within time horizon' /n0*n22/
   s 'states' /s1*s4/
-  
+
+*Subsets that define specify tasks performed in a specific unit or units that can perform a specific task    
   Ij1(i) 'set of tasks performed by unit 1' /t1/
   Ij2(i) 'set of tasks performed by unit 2' /t2/
   Ij3(i) 'set of tasks performed by unit 3' /t3/
@@ -31,6 +39,9 @@ Sets
  alias(j,jp)
  alias(n,np)
 ;
+
+*The available information for the process is given below i.e. storage capacity, initial available inventory,
+*batch size and parameters alpha and beta which are the processing time parameters viz. constant and variable terms
 
 Scalar
    h   'horizon time (available time hrs)' /100/
@@ -223,6 +234,8 @@ objectivefunction
 ;
 
 *ALLOCATION CONSTRAINTS
+*The allocation constraints express that at each unit j and at an event point n only one of the tasks that can be performed
+*in this unit (i.e. i ∈ Ij ) should take place.
 allocation1(j,n)$(ord(j)=1).. sum(i$(Ij1(i)), w(i,n)) =e= y(j,n);
 allocation2(j,n)$(ord(j)=2).. sum(i$(Ij2(i)), w(i,n)) =e= y(j,n);
 allocation3(j,n)$(ord(j)=3).. sum(i$(Ij3(i)), w(i,n)) =e= y(j,n);
@@ -230,6 +243,8 @@ allocation4(j,n)$(ord(j)=4).. sum(i$(Ij4(i)), w(i,n)) =e= y(j,n);
 allocation5(j,n)$(ord(j)=5).. sum(i$(Ij5(i)), w(i,n)) =e= y(j,n);
 
 *CAPACITY CONSTRAINTS
+*The capacity constraints specify the minimum or maximum amount of available material for a task to take place in a unit
+*Since vmin is zero for all of them, the minimum capacity constraint is not defined
 capacity1(i,j,n)$(Jt1(j) and ord(i)=1)..bm(i,j,n) =l= vmax(i,j)*w(i,n);
 capacity2(i,j,n)$(Jt2(j) and ord(i)=2)..bm(i,j,n) =l= vmax(i,j)*w(i,n);
 capacity3(i,j,n)$(Jt3(j) and ord(i)=3)..bm(i,j,n) =l= vmax(i,j)*w(i,n);
@@ -237,23 +252,30 @@ capacity4(i,j,n)$(Jt4(j) and ord(i)=4)..bm(i,j,n) =l= vmax(i,j)*w(i,n);
 capacity5(i,j,n)$(Jt5(j) and ord(i)=5)..bm(i,j,n) =l= vmax(i,j)*w(i,n);
 
 *STORAGE CONSTRAINTS
+*this constraint specifies the maximum storage capacity of each material state
 storage1(s,n).. st(s,n) =l= STmax(s);
 
 *MATERIAL BALANCE CONSTRAINTS
+*this first set constraints is specifying the initial amount of each material state at event point n0
 materialbalance1a.. st('s1','n0') =e= stin('s1') - sum(j$(Jt1(j)), bm('t1',j,'n0')) - sum(j$(Jt2(j)), bm('t2',j,'n0')) - d('s1','n0');
 materialbalance1b.. st('s2','n0') =e= stin('s2') - sum(j$(Jt3(j)), bm('t3',j,'n0')) - d('s2','n0');
 materialbalance1c.. st('s3','n0') =e= stin('s3') - sum(j$(Jt4(j)), bm('t4',j,'n0')) - sum(j$(Jt5(j)), bm('t5',j,'n0')) - d('s3','n0');
 materialbalance1d.. st('s4','n0') =e= stin('s4') - d('s4','n0');
 
+*The second set of material balance performs a mass balnce on each state i.e. the amount of material s consumed at event point n by task i in unit j
+*and the amount of material s produced at event point n-1 by task i in unit j
 materialbalance2a(n)$(ord(n)>1).. st('s1',n) =e= st('s1',n-1) - sum(j$(Jt1(j)), bm('t1',j,n)) - sum(j$(Jt2(j)), bm('t2',j,n)) - d('s1',n);
 materialbalance2b(n)$(ord(n)>1).. st('s2',n) =e= st('s2',n-1) - sum(j$(Jt3(j)), bm('t3',j,n)) + sum(j$(Jt1(j)), bm('t1',j,n-1)) + sum(j$(Jt2(j)), bm('t2',j,n-1)) - d('s2',n);
 materialbalance2c(n)$(ord(n)>1).. st('s3',n) =e= st('s3',n-1) - sum(j$(Jt4(j)), bm('t4',j,n)) - sum(j$(Jt5(j)), bm('t5',j,n)) + sum(j$(Jt3(j)), bm('t3',j,n-1)) - d('s3',n);
 materialbalance2d(n)$(ord(n)>1).. st('s4',n) =e= st('s4',n-1) + sum(j$(Jt4(j)), bm('t4',j,n-1)) + sum(j$(Jt5(j)), bm('t5',j,n-1)) - d('s4',n);
 
 *DEMAND CONSTRAINTS
+*we add these constraints when the objective finction is minimizing makespan
 demand(s).. sum(n$(ord(n)=card(n)), d(s,n)) =g= rm(s);
 
 *DURATION CONSTRAINTS
+*these constraints don't only specify how long task i will take in unit j but also specifies the dependence of the duration
+*on the amount of material to be processed by task i in unit j.
 duration1(i,j,n)$(Jt1(j) and ord(i)=1).. tf(i,j,n) =e= ts(i,j,n) + (a(i,j)*w(i,n)) + (b(i,j)*bm(i,j,n));
 duration2(i,j,n)$(Jt2(j) and ord(i)=2).. tf(i,j,n) =e= ts(i,j,n) + (a(i,j)*w(i,n)) + (b(i,j)*bm(i,j,n));
 duration3(i,j,n)$(Jt3(j) and ord(i)=3).. tf(i,j,n) =e= ts(i,j,n) + (a(i,j)*w(i,n)) + (b(i,j)*bm(i,j,n));
@@ -261,6 +283,9 @@ duration4(i,j,n)$(Jt4(j) and ord(i)=4).. tf(i,j,n) =e= ts(i,j,n) + (a(i,j)*w(i,n
 duration5(i,j,n)$(Jt5(j) and ord(i)=5).. tf(i,j,n) =e= ts(i,j,n) + (a(i,j)*w(i,n)) + (b(i,j)*bm(i,j,n));
 
 *SEQUENCE CONSTRAINTS
+*SAME TASK IN SAME UNIT
+*The first set of sequence specify that the start of task i at event point n+1 should start after the end of event point n
+*for the same task performed in unit j.
 sequence1a(i,j,n)$(Jt1(j) and ord(n)<>card(n) and ord(i)=1).. ts(i,j,n+1) =g= tf(i,j,n) - (h * (2 - w(i,n) - y(j,n)));
 sequence2a(i,j,n)$(Jt2(j) and ord(n)<>card(n) and ord(i)=2).. ts(i,j,n+1) =g= tf(i,j,n) - (h * (2 - w(i,n) - y(j,n)));
 sequence3a(i,j,n)$(Jt3(j) and ord(n)<>card(n) and ord(i)=3).. ts(i,j,n+1) =g= tf(i,j,n) - (h * (2 - w(i,n) - y(j,n)));
@@ -280,13 +305,19 @@ sequence3c(i,j,n)$(Jt3(j) and ord(n)<>card(n) and ord(i)=3).. tf(i,j,n+1) =g= tf
 sequence4c(i,j,n)$(Jt4(j) and ord(n)<>card(n) and ord(i)=4).. tf(i,j,n+1) =g= tf(i,j,n);
 sequence5c(i,j,n)$(Jt5(j) and ord(n)<>card(n) and ord(i)=5).. tf(i,j,n+1) =g= tf(i,j,n);
 
-
+*DIFFERENT TASK IN SAME UNIT
+*The following constraints establishes the relationship between the starting time of task i at point n+1 and the end time of task i′ (ip) at
+*event point n when different tasks take place in the same unit.
 sequence4aa(i,ip,j,n)$(Ij1(i) and Ij1(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,j,n) - h*(2 - w(ip,n) - y(j,n));
 sequence4bb(i,ip,j,n)$(Ij2(i) and Ij2(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,j,n) - h*(2 - w(ip,n) - y(j,n));
 sequence4cc(i,ip,j,n)$(Ij3(i) and Ij3(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,j,n) - h*(2 - w(ip,n) - y(j,n));
 sequence4dd(i,ip,j,n)$(Ij4(i) and Ij4(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,j,n) - h*(2 - w(ip,n) - y(j,n));
 sequence4ee(i,ip,j,n)$(Ij5(i) and Ij5(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,j,n+1) =g= tf(ip,j,n) - h*(2 - w(ip,n) - y(j,n));
 
+*DIFFERENT TASK IN DIFFERENT UNIT
+*When different tasks i and i′ are performed in different units j and j′ but take place one after the other according to the production recipe.
+*These constraints specify the order in which then tasks in each unit should be performed 
+*i.e. mixing (in unit 1 and 2) then reaction then purification (in unit 4 and 5).
 sequence5t1j1a(i,ip,j,jp,n)$(ord(n)<>card(n) and ord(i)<>ord(ip) and Jt3(j) and ord(i)=3 and ord(ip)=1 and ord(jp)=1).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
 sequence5t1j1b(i,ip,j,jp,n)$(ord(n)<>card(n) and ord(i)<>ord(ip) and Jt3(j) and ord(i)=3 and ord(ip)=2 and ord(jp)=2).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
 sequence5t2j2a(i,ip,j,jp,n)$(ord(n)<>card(n) and ord(i)<>ord(ip) and Jt4(j) and ord(i)=4 and ord(ip)=3 and ord(jp)=3).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
@@ -294,6 +325,8 @@ sequence5t2j2b(i,ip,j,jp,n)$(ord(n)<>card(n) and ord(i)<>ord(ip) and Jt5(j) and 
 sequence5t3j3a(i,ip,j,jp,n)$(ord(n)<>card(n) and ord(i)<>ord(ip) and Jt3(j) and ord(i)=3 and ord(ip)=4 and ord(jp)=4).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
 sequence5t3j3b(i,ip,j,jp,n)$(ord(n)<>card(n) and ord(i)<>ord(ip) and Jt3(j) and ord(i)=3 and ord(ip)=5 and ord(jp)=5).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
 
+*COMPLETION OF PREVIOUS TASK
+*A task i' (ip) peformed in unit j cannot start until task i in unit j is completed
 sequence6aj1(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) <= ord(n)), sum(ip$(Ij1(ip)), tf(ip,j,np) - ts(ip,j,np)));
 sequence6bj2(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) <= ord(n)), sum(ip$(Ij2(ip)), tf(ip,j,np) - ts(ip,j,np)));
 sequence6cj3(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) <= ord(n)), sum(ip$(Ij3(ip)), tf(ip,j,np) - ts(ip,j,np)));
@@ -325,6 +358,8 @@ sequence10dj4(i,j,n)$(Jt5(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(
 sequence10ej5(i,j,n)$(Jt5(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) <= ord(n)), sum(ip$(Ij5(ip)), tf(ip,j,np) - ts(ip,j,np)));
 
 *TIME HORIZON CONSTRAINTS
+*Specify that all tasks should task place within the time horizon
+*commented out horizon constraints can be used in place of explicitly written constraints
 *timehorizon1(i,j,n).. tf(i,j,n) =l= h;
 
 timehorizon1a(i,j,n)$Jt1(j).. tf(i,j,n) =l= h;
@@ -341,7 +376,6 @@ timehorizon2c(i,j,n)$Jt3(j).. ts(i,j,n) =l= h;
 timehorizon2d(i,j,n)$Jt4(j).. ts(i,j,n) =l= h;
 timehorizon2e(i,j,n)$Jt5(j).. ts(i,j,n) =l= h;
 
-*objectivefunction.. NetP =e= sum(s, sum(n, ps(s)*d(s,n)));
 objectivefunction(i,j,n)$(ord(n)=card(n)).. tf(i,j,n) =l= MS;              
 model sursalaEX3floudasediteda / all /;
 
