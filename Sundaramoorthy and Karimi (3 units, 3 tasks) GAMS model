@@ -1,252 +1,319 @@
 $Ontext
 
 This GAMS Model presents an application of the novel mathematical formulation
-for the short-term scheduling of batch plants. The proposed formulation by Ierapetritou and Floudas 
+for the short-term scheduling of batch plants. The proposed formulation by Shaik and Floudas (2009) 
 is used on a literature example presented in the paper that involves 3 tasks and 3 units. The main process involves a series of 
 processing tasks i.e. a mixing, reaction and purification.
 
+Example 1 reference
 Ierapetritou and Floudas (1998) Effective Continuous-Time Formulation for Short-Term Scheduling.
 1. Multipurpose Batch Processes. Independent Engineering Chemical Research 37 (4341-4359)
 
+Formulation reference
+Novel Unified Modeling Approach for Short-Term Scheduling
+Munawar A. Shaik and Christodoulos A. Floudas Industrial & Engineering Chemistry Research 2009 48 (6), 2947-2964
 $Offtext
+$onempty
 
-*Define the sets to be utilised in the MILP
-Sets
-  i 'tasks' /t1*t3/
-  j 'units'/j1*j3/
-  n 'event points within time horizon' /n0*n6/
-  s 'states' /s1*s4/
-  
-
-*Subsets that define specify tasks performed in a specific unit or units that can perform a specific task   
-  Ij1(i) 'set of tasks performed by unit 1' /t1/
-  Ij2(i) 'set of tasks performed by unit 2' /t2/
-  Ij3(i) 'set of tasks performed by unit 3' /t3/
-  
-  Jt1(j) 'units that perform task 1' /j1/
-  Jt2(j) 'units that perform task 2' /j2/
-  Jt3(j) 'units that perform task 3' /j3/
-  
- alias(i,ip)
- alias(j,jp)
- alias(n,np)
+Scalar
+H 'short-term time horizon' /60/
+delta 'limit on the maximum number of events over which task i is allowed to continue' /1/
 ;
 
-*The available information for the process is given below i.e. storage capacity, initial available inventory,
-*batch size and parameters alpha and beta which are the processing time parameters viz. constant and variable terms
+Sets
+  i 'tasks' /t1*t3/
+  j 'units' /j1*j3/
+  n 'events' /n0*n19/
+  s 'states' /s1*s4/
+  
+Ij1(i) 'tasks which can be performed in unit 1' /t1/
+Ij2(i) 'tasks which can be performed in unit 2' /t2/
+Ij3(i) 'tasks which can be performed in unit 3' /t3/
+
+Is1(i)'tasks which process state 1 and either produce or consume' /t1/
+Is2(i)'tasks which process state 2 and either produce or consume' /t1,t2/
+Is3(i)'tasks which process state 3 and either produce or consume' /t2,t3/
+Is4(i)'tasks which process state 4 and either produce or consume' /t3/
+
+Ips1(i) 'tasks which produce state 2' //
+Ips2(i) 'tasks which produce state 2' /t1/
+Ips3(i) 'tasks which produce state 3' /t2/
+Ips4(i) 'tasks which produce state 4' /t3/
+
+Ics1(i) 'tasks which consume state 1' /t1/
+Ics2(i) 'tasks which consume state 2' /t2/
+Ics3(i) 'tasks which consume state 3' /t3/
+Ics4(i) 'tasks which consume state 4' //
+
+Jt1(j) 'units which are suitable for performing task 1' /j1/
+Jt2(j) 'units which are suitable for performing task 2' /j2/
+Jt3(j) 'units which are suitable for performing task 3' /j3/
+
+Sr(s) 'states that are raw materials' /s1/
+Sfis(s) 'intermediate states with dedicated finite intermediate storage' /s2,s3/
+Sp(s) 'states that are final products' /s4/
+
+
+alias(i,ip)
+alias(j,jp)
+alias(n,np,npp)
+
+;
+
+Parameters
+
+Bmin(i) 'minimum capacity (batch size) of task i'
+   /
+   t1 0
+   t2 0
+   t3 0
+   /
+
+Bmax(i) 'maximum capacity (batch size) of task i'
+   /
+   t1 100
+   t2 75
+   t3 50
+   /
+   
+STin(s) 'initial amount of state s available'
+   /
+   s1  10000
+   s2  0
+   s3  0
+   s4  0
+   /
+   
+STmax(s) 'maximum amount of state s'
+/
+   s1  +inf
+   s2  100
+   s3  100
+   s4  +inf
+   /
+   
+a(i) 'coefficient of constant term of processing time of task i'
+   /
+   t1  3.0
+   t2  2.0
+   t3  1.0
+   /
+   
+b(i) 'coefficient of variable term of processing time of task i'
+   /
+   t1  0.03
+   t2  0.0266
+   t3  0.02
+   /
+;   
+Table p(i,s) 'proportion of state s produced (p(i,s) > 0), consumed (p(i,s) < 0) by task i'
+           s1          s2        s3        s4
+   t1      -1          +1
+   t2                  -1        +1
+   t3                            -1        +1
+
+;
+
 Parameter
-  Vmin(i) 'minimum amount of mateial processed by task i required to start operating unit j'   
-  / t1   0
-    t2   0
-    t3   0   /
 
-  Vmax(i) 'maximum capacity of specific unit j when process task i'
-/   t1   100
-    t2   75
-    t3   50   /
+Ps(s) 'price of state s'
+   /
+   s1    0
+   s2    0
+   s3    0
+   s4    1
+   /
+Ds(s) 'demand for state s'
+    /
+   s1 0
+   s2 0
+   s3 0
+   s4 0
+   /
+;
 
-  STmax(s) 'available max storage capacity for state s'
-*unlimited = +inf
-/   s1   +inf
-    s2   100
-    s3   100
-    s4   +inf    /
- 
-  a(i) 'constant term of processing time of task i at unit j'
-/   t1  3.0
-    t2  2.0
-    t3  1.0  /
-  
-  b(i) 'variable term of processing time of task i at unit j expressing time required by unit j to process one unit of materil performing task i'
-/   t1  0.03
-    t2  0.0266
-    t3  0.02  /
-  
-  ps(s) 'price of state s'
-/   s1  0
-    s2  0
-    s3  0
-    s4  1  /
-    
-    stin(s) 'Initial conditions for states'
-*unlimted = +inf
-/   s1  10000
-    s2   0
-    s3   0
-    s4   0   /
-    
-
-   h   'horizon time  (available time hrs)' /12/
-*market requirements hav not been specified, text advises us not to utilise demand constraints, made an assumption here
-   r 'market requirements for state s at end of time horizon' /100/;
 
 Variables
-   w(i,n) 'binary variable that assign the beginning of task i at event point n'
-   y(j,n) 'binary variable that assign the utilization of unit j at event point n'
-   bm(i,j,n) 'amount of material undertaking task i in  unit j at event point n'
-   d(s,n) 'amount of state s being delivered to the market at event point n'
-   st(s,n) 'amount of state s at event point n'
-   ts(i,j,n) 'time that task i starts in unit j at event point n'
-   tf(i,j,n) 'time that task i finishes in unit j while it starts at event point n'
-   NetP 'netprofit';
-   
-Binary variables w,y;
-Positive variable bm,d,st,ts,tf;
+w(i,n,np) 'binary variable for assignment of task i that starts at event n and ends at event np'
+bs(i,n,np) 'amount of material undertaking task i that starts at event n and ends at event np'
+ST0(s) 'initial amount of state s (not R) required from external resources'
+ST(s,n) 'excess amount of state s that needs to be stored at event n'
+Ts(i,n) 'time at which task i starts at event n'
+Tf(i,n) 'time at which task i ends at event n'
+NetP 'Net profit'
+;
+
+Binary variables w ;
+Positive variables bs,ST,ST0,Ts,Tf ;
+Free variables NetP;
 
 Equations
+allocation1a
+allocation2a
+allocation3a
 
-  allocation1 'express that at each unit j and at an event point n only one of the tasks that can be performed in this unit should take place'
-  allocation2 'express that at each unit j and at an event point n only one of the tasks that can be performed in this unit should take place'
-  allocation3 'express that at each unit j and at an event point n only one of the tasks that can be performed in this unit should take place'
-  
-  capacity1
-  capacity2
-  capacity3
-  
-  storage1
+allocation1b
+allocation2b
+allocation3b
 
-  materialbalance1a
-  materialbalance1b
-  materialbalance1c
-  materialbalance1d
-  
-  materialbalance2a
-  materialbalance2b
-  materialbalance2c
-  materialbalance2d
-  
-  duration1
-  duration2
-  duration3
-  
-  sequence1a
-  sequence2a
-  sequence3a
-   
-  sequence1b
-  sequence2b
-  sequence3b
+allocation1c
+allocation2c
+allocation3c
 
-  sequence1c
-  sequence2c
-  sequence3c
-  
-sequence4a
-sequence4b
-sequence4c
+allocation1d
+allocation2d
+allocation3d
 
-sequence5t1j1
-sequence5t2j2
+allocation1e
+allocation2e
+allocation3e
 
-sequence6aj1
-sequence6bj2
-sequence6cj3
+capacity1a
+capacity1b
 
-timehorizon1a
-timehorizon1b
-timehorizon1c
+mat1a
+mat1b
+mat1c
+mat1d
 
-timehorizon2a
-timehorizon2b
-timehorizon2c
+mat2a
+mat2b
+mat2c
+mat2d
+
+duration1
+duration2
+duration3
+
+sequencestsu1
+sequencestsu2
+
+sequencedtsu1
+sequencedtsu2
+sequencedtsu3
+
+sequencedtdu1
+sequencedtdu2
+sequencedtdu3
+
+tight1
+tight2
+tight3
+
+dfsp1
+dfsp2
+dfsp3
+
+storage
+
+feas1
+feas2
+feas3
+
+bv1
+bv2
+bv3
+bv4
+bv5
 
 objectivefunction
 ;
 
 *ALLOCATION CONSTRAINTS
-*The allocation constraints express that at each unit j and at an event point n only one of the tasks that can be performed
-*in this unit (i.e. i ∈ Ij ) should take place.
-allocation1(j,n).. sum(i$(Ij1(i)), w(i,n)) =e= y('j1',n);
-allocation2(j,n).. sum(i$(Ij2(i)), w(i,n)) =e= y('j2',n);
-allocation3(j,n).. sum(i$(Ij3(i)), w(i,n)) =e= y('j3',n);
+allocation1a(n).. sum(i$(Ij1(i)), sum(np$(ord(n) <= ord(np) and ord(np)<= (ord(n)+delta)), w(i,n,np))) =l= 1;
+allocation2a(n).. sum(i$(Ij2(i)), sum(np$(ord(n) <= ord(np) and ord(np)<= (ord(n)+delta)), w(i,n,np))) =l= 1;
+allocation3a(n).. sum(i$(Ij3(i)), sum(np$(ord(n) <= ord(np) and ord(np)<= (ord(n)+delta)), w(i,n,np))) =l= 1;
+
+allocation1b(np).. sum(i$(Ij1(i)), sum(n$((ord(np)-delta) <= ord(n) and ord(n) <= ord(np)), w(i,n,np))) =l= 1; 
+allocation2b(np).. sum(i$(Ij2(i)), sum(n$((ord(np)-delta) <= ord(n) and ord(n) <= ord(np)), w(i,n,np))) =l= 1; 
+allocation3b(np).. sum(i$(Ij3(i)), sum(n$((ord(np)-delta) <= ord(n) and ord(n) <= ord(np)), w(i,n,np))) =l= 1; 
+
+allocation1c(i,n)$(ord(i)=1).. sum(ip$(Ij1(ip) and ord(i) <> ord(ip)), sum(np$((ord(n)-delta) <= ord(np) and ord(np) <= ord(n)), w(ip,np,n))) =l= 1 - sum(np$(ord(n) <= ord(np) and ord(np) <= (ord(n)+delta)), w(i,n,np)); 
+allocation2c(i,n)$(ord(i)=2).. sum(ip$(Ij2(ip) and ord(i) <> ord(ip)), sum(np$((ord(n)-delta) <= ord(np) and ord(np) <= ord(n)), w(ip,np,n))) =l= 1 - sum(np$(ord(n) <= ord(np) and ord(np) <= (ord(n)+delta)), w(i,n,np)); 
+allocation3c(i,n)$(ord(i)=3).. sum(ip$(Ij3(ip) and ord(i) <> ord(ip)), sum(np$((ord(n)-delta) <= ord(np) and ord(np) <= ord(n)), w(ip,np,n))) =l= 1 - sum(np$(ord(n) <= ord(np) and ord(np) <= (ord(n)+delta)), w(i,n,np)); 
+
+allocation1d(i,n)$(ord(n)>1 and ord(i)=1).. sum(np$(ord(n) <= ord(np) and ord(np) <= (ord(n)+delta)), w(i,n,np)) =l= 1 - sum(np$(ord(np) < ord(n)), sum(npp$(ord(npp) >= ord(np) and ord(npp) <= (ord(np)+delta)), sum(ip$(Ij1(ip)),w(ip,np,npp)))) + sum(npp, sum(np$(ord(np) < ord(n) and ord(npp) <= ord(np) and ord(np) <= (ord(npp)+delta)), sum(ip$(Ij1(ip)), w(ip,npp,np)))); 
+allocation2d(i,n)$(ord(n)>1 and ord(i)=2).. sum(np$(ord(n) <= ord(np) and ord(np) <= (ord(n)+delta)), w(i,n,np)) =l= 1 - sum(np$(ord(np) < ord(n)), sum(npp$(ord(npp) >= ord(np) and ord(npp) <= (ord(np)+delta)), sum(ip$(Ij2(ip)),w(ip,np,npp)))) + sum(npp, sum(np$(ord(np) < ord(n) and ord(npp) <= ord(np) and ord(np) <= (ord(npp)+delta)), sum(ip$(Ij2(ip)), w(ip,npp,np))));
+allocation3d(i,n)$(ord(n)>1 and ord(i)=3).. sum(np$(ord(n) <= ord(np) and ord(np) <= (ord(n)+delta)), w(i,n,np)) =l= 1 - sum(np$(ord(np) < ord(n)), sum(npp$(ord(npp) >= ord(np) and ord(npp) <= (ord(np)+delta)), sum(ip$(Ij3(ip)),w(ip,np,npp)))) + sum(npp, sum(np$(ord(np) < ord(n) and ord(npp) <= ord(np) and ord(np) <= (ord(npp)+delta)), sum(ip$(Ij3(ip)), w(ip,npp,np))));
+
+allocation1e(i,n)$(ord(i)=1).. sum(np$((ord(n)-delta) <= ord(np) and ord(np) <= ord(n)), w(i,np,n)) =l= sum(np$(ord(np) <= ord(n)), sum(npp$(ord(np) <= ord(npp) and ord(npp) <= (ord(np)+delta)), w(i,np,npp))) - sum(npp, sum(np$(ord(npp) <= ord(np) and ord(np) <= (ord(npp)+delta) and ord(np)<ord(n)), w(i,npp,np)));
+allocation2e(i,n)$(ord(i)=2).. sum(np$((ord(n)-delta) <= ord(np) and ord(np) <= ord(n)), w(i,np,n)) =l= sum(np$(ord(np) <= ord(n)), sum(npp$(ord(np) <= ord(npp) and ord(npp) <= (ord(np)+delta)), w(i,np,npp))) - sum(npp, sum(np$(ord(npp) <= ord(np) and ord(np) <= (ord(npp)+delta) and ord(np)<ord(n)), w(i,npp,np)));
+allocation3e(i,n)$(ord(i)=3).. sum(np$((ord(n)-delta) <= ord(np) and ord(np) <= ord(n)), w(i,np,n)) =l= sum(np$(ord(np) <= ord(n)), sum(npp$(ord(np) <= ord(npp) and ord(npp) <= (ord(np)+delta)), w(i,np,npp))) - sum(npp, sum(np$(ord(npp) <= ord(np) and ord(np) <= (ord(npp)+delta) and ord(np)<ord(n)), w(i,npp,np)));
 
 *CAPACITY CONSTRAINTS
-*The capacity constraints specify the minimum or maximum amount of available material for a task to take place in a unit
-*Since vmin is zero for all of them, the minimum capacity constraint is not defined
-capacity1(i,j,n)$(Jt1(j))..bm(i,j,n) =l= vmax(i)*w(i,n);
-capacity2(i,j,n)$(Jt2(j))..bm(i,j,n) =l= vmax(i)*w(i,n);
-capacity3(i,j,n)$(Jt3(j))..bm(i,j,n) =l= vmax(i)*w(i,n);
+capacity1a(i,n,np)$(ord(n)<=ord(np) and ord(np)<=(ord(n)+delta)).. Bmin(i)*w(i,n,np) =l= bs(i,n,np);
+capacity1b(i,n,np)$(ord(n)<=ord(np) and ord(np)<=(ord(n)+delta)).. bs(i,n,np) =l= Bmax(i)*w(i,n,np);
 
-*STORAGE CONSTRAINTS
-*this constraint specifies the maximum storage capacity of each material state
-storage1(s,n).. st(s,n) =l= STmax(s);
+*MATERIAL BALANCE
+mat1a(s,n)$(ord(s)=1 and ord(n)>1).. ST(s,n) =e= ST(s,n-1) + sum(i$(Ips1(i)), sum(np$((ord(n)-1-delta) <= ord(np) and ord(np) <= (ord(n)-1)), p(i,s)*bs(i,np,n-1))) + sum(i$(Ics1(i)), sum(np$(ord(n)<=ord(np) and ord(np) <= (ord(n)+delta)), p(i,s)*bs(i,n,np)));
+mat1b(s,n)$(ord(s)=2 and ord(n)>1).. ST(s,n) =e= ST(s,n-1) + sum(i$(Ips2(i)), sum(np$((ord(n)-1-delta) <= ord(np) and ord(np) <= (ord(n)-1)), p(i,s)*bs(i,np,n-1))) + sum(i$(Ics2(i)), sum(np$(ord(n)<=ord(np) and ord(np) <= (ord(n)+delta)), p(i,s)*bs(i,n,np)));
+mat1c(s,n)$(ord(s)=3 and ord(n)>1).. ST(s,n) =e= ST(s,n-1) + sum(i$(Ips3(i)), sum(np$((ord(n)-1-delta) <= ord(np) and ord(np) <= (ord(n)-1)), p(i,s)*bs(i,np,n-1))) + sum(i$(Ics3(i)), sum(np$(ord(n)<=ord(np) and ord(np) <= (ord(n)+delta)), p(i,s)*bs(i,n,np)));
+mat1d(s,n)$(ord(s)=4 and ord(n)>1).. ST(s,n) =e= ST(s,n-1) + sum(i$(Ips4(i)), sum(np$((ord(n)-1-delta) <= ord(np) and ord(np) <= (ord(n)-1)), p(i,s)*bs(i,np,n-1))) + sum(i$(Ics4(i)), sum(np$(ord(n)<=ord(np) and ord(np) <= (ord(n)+delta)), p(i,s)*bs(i,n,np)));
 
-*MATERIAL BALANCE CONSTRAINTS
-*this first set constraints is specifying the initial amount of each material state at event point n0
-materialbalance1a.. st('s1','n0') =e= stin('s1') - sum(j$(Jt1(j)), bm('t1',j,'n0')) - d('s1','n0');
-materialbalance1b.. st('s2','n0') =e= stin('s2') - sum(j$(Jt2(j)), bm('t2',j,'n0')) - d('s2','n0');
-materialbalance1c.. st('s3','n0') =e= stin('s3') - sum(j$(Jt3(j)), bm('t3',j,'n0')) - d('s3','n0');
-materialbalance1d.. st('s4','n0') =e= stin('s4') - d('s4','n0');
-
-*The second set of material balance performs a mass balnce on each state i.e. the amount of material s consumed at event point n by task i in unit j
-*and the amount of material s produced at event point n-1 by task i in unit j
-materialbalance2a(n)$(ord(n)>1).. st('s1',n) =e= st('s1',n-1) - sum(j$(Jt1(j)), bm('t1',j,n)) - d('s1',n);
-materialbalance2b(n)$(ord(n)>1).. st('s2',n) =e= st('s2',n-1) - sum(j$(Jt2(j)), bm('t2',j,n)) + sum(j$(Jt1(j)), bm('t1',j,n-1)) - d('s2',n);
-materialbalance2c(n)$(ord(n)>1).. st('s3',n) =e= st('s3',n-1) - sum(j$(Jt3(j)), bm('t3',j,n)) + sum(j$(Jt2(j)), bm('t2',j,n-1)) - d('s3',n);
-materialbalance2d(n)$(ord(n)>1).. st('s4',n) =e= st('s4',n-1) + sum(j$(Jt3(j)), bm('t3',j,n-1)) - d('s4',n);
+mat2a(s,n)$(ord(s)=1 and ord(n)=1).. ST(s,n) =e= ST0(s) + sum(i$(Ics1(i)), sum(np$(ord(n)<=ord(np) and ord(np)<=(ord(n)+delta)), p(i,s)*bs(i,n,np)));
+mat2b(s,n)$(ord(s)=2 and ord(n)=1).. ST(s,n) =e= ST0(s) + sum(i$(Ics2(i)), sum(np$(ord(n)<=ord(np) and ord(np)<=(ord(n)+delta)), p(i,s)*bs(i,n,np)));
+mat2c(s,n)$(ord(s)=3 and ord(n)=1).. ST(s,n) =e= ST0(s) + sum(i$(Ics3(i)), sum(np$(ord(n)<=ord(np) and ord(np)<=(ord(n)+delta)), p(i,s)*bs(i,n,np)));
+mat2d(s,n)$(ord(s)=4 and ord(n)=1).. ST(s,n) =e= ST0(s) + sum(i$(Ics4(i)), sum(np$(ord(n)<=ord(np) and ord(np)<=(ord(n)+delta)), p(i,s)*bs(i,n,np)));
 
 *DURATION CONSTRAINTS
-*these constraints don't only specify how long task i will take in unit j but also specifies the dependence of the duration
-*on the amount of material to be processed by task i in unit j.
-duration1(i,j,n)$(Jt1(j) and ord(i)=1).. tf(i,j,n) =e= ts(i,j,n) + (a(i)*w(i,n)) + (b(i)*bm(i,j,n));
-duration2(i,j,n)$(Jt2(j) and ord(i)=2).. tf(i,j,n) =e= ts(i,j,n) + (a(i)*w(i,n)) + (b(i)*bm(i,j,n));
-duration3(i,j,n)$(Jt3(j) and ord(i)=3).. tf(i,j,n) =e= ts(i,j,n) + (a(i)*w(i,n)) + (b(i)*bm(i,j,n));
+duration1(i,n).. Tf(i,n) =g= Ts(i,n);
+duration2(i,n,np)$(ord(n) <= ord(np) and ord(np) <= (ord(n)+delta)).. Tf(i,n) =g= Ts(i,n) + a(i)*w(i,n,np) + b(i)*bs(i,n,np) - H*(1 - w(i,n,np));
+duration3(i,n,np)$(ord(n) <= ord(np) and ord(np) <= (ord(n)+delta)).. Tf(i,n) =l= Ts(i,n) + a(i)*w(i,n,np) + b(i)*bs(i,n,np) + H*(1 - w(i,n,np));
 
 *SEQUENCE CONSTRAINTS
-*SAME TASK IN SAME UNIT
-*The first set of sequence specify that the start of task i at event point n+1 should start after the end of event point n
-*for the same task performed in unit j.
-sequence1a(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts('t1',j,n+1) =g= tf('t1',j,n) - (h * (2 - w('t1',n) - y(j,n)));
-sequence2a(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts('t2',j,n+1) =g= tf('t2',j,n) - (h * (2 - w('t2',n) - y(j,n)));
-sequence3a(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts('t3',j,n+1) =g= tf('t3',j,n) - (h * (2 - w('t3',n) - y(j,n)));
+*Same Task in Same Unit
+sequencestsu1(i,n)$(ord(n)<card(n)).. Ts(i,n+1) =g= Tf(i,n);
+sequencestsu2(i,n)$(ord(n)<card(n)).. Ts(i,n+1) =l= Tf(i,n) + H*(1 - (sum(np$(ord(np) <= ord(n)), sum(npp$(ord(np) <= ord(npp) and ord(npp) <= (ord(np)+delta)), w(i,np,npp))) - sum(npp, sum(np$(ord(np) < ord(n) and ord(npp) <= ord(np) and ord(np) <= (ord(npp)+delta)), w(i,npp,np))))) + H*(sum(np$((ord(n)-delta) <= ord(np) and ord(np)<= ord(n)), w(i,np,n)));
 
-sequence1b(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= ts(i,j,n);
-sequence2b(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= ts(i,j,n);
-sequence3b(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. ts(i,j,n+1) =g= ts(i,j,n);
+*Different Task in Same Unit
+sequencedtsu1(i,ip,n)$(Ij1(ip) and Ij1(i) and ord(i) <> ord(ip) and ord(n) < card(n)).. Ts(i,n+1) =g= Tf(ip,n);
+sequencedtsu2(i,ip,n)$(Ij2(ip) and Ij2(i) and ord(i) <> ord(ip) and ord(n) < card(n)).. Ts(i,n+1) =g= Tf(ip,n);
+sequencedtsu3(i,ip,n)$(Ij3(ip) and Ij3(i) and ord(i) <> ord(ip) and ord(n) < card(n)).. Ts(i,n+1) =g= Tf(ip,n);
 
-sequence1c(i,j,n)$(Jt1(j) and ord(n)<>card(n)).. tf(i,j,n+1) =g= tf(i,j,n);
-sequence2c(i,j,n)$(Jt2(j) and ord(n)<>card(n)).. tf(i,j,n+1) =g= tf(i,j,n);
-sequence3c(i,j,n)$(Jt3(j) and ord(n)<>card(n)).. tf(i,j,n+1) =g= tf(i,j,n);
+*Different Task in Different Unit
+sequencedtdu1(i,ip,n)$(ord(n) < card(n) and ord(i) <> ord(ip) and Ics2(i) and Ips2(ip) and not Ij1(i) and Ij1(ip)).. Ts(i,n+1) =g= Tf(ip,n) - H*(1 - sum(np$((ord(n)-delta) <= ord(np) and ord(np)<=ord(n)), w(ip,np,n)));
+sequencedtdu2(i,ip,n)$(ord(n) < card(n) and ord(i) <> ord(ip) and Ics2(i) and Ips2(ip) and not Ij2(i) and Ij2(ip)).. Ts(i,n+1) =g= Tf(ip,n) - H*(1 - sum(np$((ord(n)-delta) <= ord(np) and ord(np)<=ord(n)), w(ip,np,n)));
+sequencedtdu3(i,ip,n)$(ord(n) < card(n) and ord(i) <> ord(ip) and Ics3(i) and Ips3(ip) and not Ij3(i) and Ij3(ip)).. Ts(i,n+1) =g= Tf(ip,n) - H*(1 - sum(np$((ord(n)-delta) <= ord(np) and ord(np)<=ord(n)), w(ip,np,n)));
 
-*DIFFERENT TASK IN SAME UNIT
-*The following constraints establishes the relationship between the starting time of task i at point n+1 and the end time of task i′ (ip) at
-*event point n when different tasks take place in the same unit.
-sequence4a(i,ip,j,n)$(Ij1(i) and Ij1(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,'j1',n+1) =g= tf(ip,'j1',n) - h*(2 - w(ip,n) - y('j1',n));
-sequence4b(i,ip,j,n)$(Ij2(i) and Ij2(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,'j2',n+1) =g= tf(ip,'j2',n) - h*(2 - w(ip,n) - y('j2',n));
-sequence4c(i,ip,j,n)$(Ij3(i) and Ij3(ip) and ord(n)<>card(n) and ord(i)<>ord(ip)).. ts(i,'j3',n+1) =g= tf(ip,'j3',n) - h*(2 - w(ip,n) - y('j3',n));
+*TIGHTENING CONSTRAINTS
+tight1(j).. sum(i$(Ij1(i)), sum(n, sum(np$(ord(n) <= ord(np) and ord(np) <= (ord(n)+delta)), a(i)*w(i,n,np) + b(i)*bs(i,n,np)))) =l= H;
+tight2(j).. sum(i$(Ij2(i)), sum(n, sum(np$(ord(n) <= ord(np) and ord(np) <= (ord(n)+delta)), a(i)*w(i,n,np) + b(i)*bs(i,n,np)))) =l= H;
+tight3(j).. sum(i$(Ij3(i)), sum(n, sum(np$(ord(n) <= ord(np) and ord(np) <= (ord(n)+delta)), a(i)*w(i,n,np) + b(i)*bs(i,n,np)))) =l= H;
 
-*When different tasks i and i′ are performed in different units j and j′ but take place one after the other according to the production recipe.
-*These constraints specify the order in which then tasks in each unit should be performed i.e. mixing then reaction then purification.
-sequence5t1j1(i,ip,j,jp,n)$(ord(n)<>card(n) and ord(i)<>ord(ip) and Jt2(j) and ord(i)=2 and ord(ip)=1 and ord(jp)=1).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
-sequence5t2j2(i,ip,j,jp,n)$(ord(n)<>card(n) and ord(i)<>ord(ip) and Jt3(j) and ord(i)=3 and ord(ip)=2 and ord(jp)=2).. ts(i,j,n+1) =g= tf(ip,jp,n) - h*(2 - w(ip,n) - y(jp,n));
+*DEDICATED FINITE STORAGE POLOICY
+dfsp1(i,ip,n)$(Ics2(i) and Ips2(ip) and Ij1(ip) and not Ij1(i) and ord(i) <> ord(ip)).. Ts(i,n+1) =l= Tf(ip,n) + H*(2 - sum(np$((ord(n)-delta) <= ord(np) and ord(np) < ord(n)), w(ip,np,n)) - sum(np$((ord(n)+1) <= ord(np) and ord(np) <= (ord(n)+1+delta)), w(i,n+1,np)));
+dfsp2(i,ip,n)$(Ics2(i) and Ips2(ip) and Ij2(ip) and not Ij2(i) and ord(i) <> ord(ip)).. Ts(i,n+1) =l= Tf(ip,n) + H*(2 - sum(np$((ord(n)-delta) <= ord(np) and ord(np) < ord(n)), w(ip,np,n)) - sum(np$((ord(n)+1) <= ord(np) and ord(np) <= (ord(n)+1+delta)), w(i,n+1,np)));
+dfsp3(i,ip,n)$(Ics3(i) and Ips3(ip) and Ij3(ip) and not Ij3(i) and ord(i) <> ord(ip)).. Ts(i,n+1) =l= Tf(ip,n) + H*(2 - sum(np$((ord(n)-delta) <= ord(np) and ord(np) < ord(n)), w(ip,np,n)) - sum(np$((ord(n)+1) <= ord(np) and ord(np) <= (ord(n)+1+delta)), w(i,n+1,np)));
 
-*COMPLETION OF PREVIOUS TASK
-*A task i' (ip) peformed in unit j cannot start until task i in unit j is completed
-sequence6aj1(i,j,n)$(Ij1(i) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij1(ip)), tf(ip,j,np) - ts(ip,j,np)));
-sequence6bj2(i,j,n)$(Ij2(i) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij2(ip)), tf(ip,j,np) - ts(ip,j,np)));
-sequence6cj3(i,j,n)$(Ij3(i) and ord(n)<>card(n)).. ts(i,j,n+1) =g= sum(np$(ord(np) le ord(n)), sum(ip$(Ij3(ip)), tf(ip,j,np) - ts(ip,j,np)));
+*STORAGE CAPACITY
+storage(s,n)$(Sfis(s)).. ST(s,n) =l= STmax(s);
 
-*TIME HORIZON CONSTRAINTS
-*Specify that all tasks should task place within the time horizon
-*commented out horizon constraints can be used in place of explicitly written constraints
-*timehorizon1(i,j,n).. tf(i,j,n) =l= h;
+*MATERIAL BALANCE FEASIBILITY
+feas1(i,ip,n)$(Ics2(i) and Ips2(ip) and Ij1(ip) and not Ij1(i) and ord(i)<>ord(ip)).. Tf(ip,n) =g= Ts(i,n) - H*(1 - sum(np$((ord(n)-delta) <= ord(np) and ord(np) <= ord(n)), w(ip,np,n)));
+feas2(i,ip,n)$(Ics2(i) and Ips2(ip) and Ij2(ip) and not Ij2(i) and ord(i)<>ord(ip)).. Tf(ip,n) =g= Ts(i,n) - H*(1 - sum(np$((ord(n)-delta) <= ord(np) and ord(np) <= ord(n)), w(ip,np,n)));
+feas3(i,ip,n)$(Ics3(i) and Ips3(ip) and Ij3(ip) and not Ij3(i) and ord(i)<>ord(ip)).. Tf(ip,n) =g= Ts(i,n) - H*(1 - sum(np$((ord(n)-delta) <= ord(np) and ord(np) <= ord(n)), w(ip,np,n)));
 
-timehorizon1a(i,j,n)$Jt1(j).. tf(i,j,n) =l= h;
-timehorizon1b(i,j,n)$Jt2(j).. tf(i,j,n) =l= h;
-timehorizon1c(i,j,n)$Jt3(j).. tf(i,j,n) =l= h;
+*BOUNDS ON VARIABLES
+bv1(i,n).. Ts(i,n) =l= H;
+bv2(i,n).. Tf(i,n) =l= H;
+bv3(i,n,np)$(ord(n) <= ord(np) and ord(np) <= (ord(n) + delta)).. bs(i,n,np) =l= Bmax(i);
+bv4(s).. ST0(s) =l= STin(s);
+bv5(s)$(Sfis(s) and Sp(s)).. ST0(s) =e= 0;
 
-*timehorizon2(i,j,n).. ts(i,j,n) =l= h;
+objectivefunction.. NetP =e= sum(s$(Sp(s)), sum(n$(ord(n)=card(n)), Ps(s)*(ST(s,n) + sum(i$(Ips4(i)), sum(np$((ord(n)-delta) <= ord(np) and ord(np) <= ord(n)), p(i,s)*bs(i,np,n))))));
 
-timehorizon2a(i,j,n)$Jt1(j).. ts(i,j,n) =l= h;
-timehorizon2b(i,j,n)$Jt2(j).. ts(i,j,n) =l= h;
-timehorizon2c(i,j,n)$Jt3(j).. ts(i,j,n) =l= h;
+model example1SF09NetP /all/;
 
-*objective function is the maximization of profit by maximizing production and then multiplying it by the price of each state available at end of horizon
-objectivefunction.. NetP =e= sum(s, sum(n, ps(s)*d(s,n)));
-                    
-model floudasEX1 / all /;
-
-options optcr = 0.00001;
+options optcr = 0.000001;
 option mip = cplex;
+option limrow = 100;
+$onecho > cplex.opt
+preind = 0
+prepass = 0
+preslvnd = -1
+relaxpreind = 0
+advind = 0
+$offecho
+option solvelink = 0;
 
-solve floudasEX1 using mip maximizing NetP;
+solve example1SF09NetP using mip maximizing NetP;
